@@ -1,22 +1,46 @@
 # IPL 2025 Player Stats Analysis and Prediction
 
-Analysis of IPL (Indian Premier League) match data using Principal Component Analysis (PCA) for dimensionality reduction and pattern recognition.
+Analysis of IPL (Indian Premier League) match data using **PCA (Principal Component Analysis)** and **SQL queries** for data exploration, pattern recognition, and insight extraction.
 
 ## Problem Statement
 
-To predict IPL match outcomes by analyzing the underlying factors within the high-dimensional match dataset. After preprocessing the raw data, we apply PCA to reduce the numerous features into a concise set of latent components. Then we visualize these components to identify and understand hidden patterns and team behaviors. Finally, we use this reduced feature space to build an efficient and accurate classification model.
+To predict IPL match outcomes by analyzing the underlying factors within the high-dimensional match dataset. After preprocessing the raw data, we apply PCA to reduce the numerous features into a concise set of latent components. Then we visualize these components to identify and understand hidden patterns and team behaviors. Finally, we use SQL queries to extract deeper insights about team performance, toss impact, venue statistics, and player achievements.
 
-## Steps Covered
+## Notebooks
 
-1. **Data Cleaning** - Handle missing values, duplicates, and invalid entries
-2. **Data Processing** - Convert types (e.g., date), normalize text
-3. **Data Transformation** - Encode categorical variables
-4. **Feature Engineering** - Create new useful features
-5. **Feature Selection** - Drop irrelevant or redundant features
-6. **Handling & Balancing Data** - Address class imbalance
-7. **Splitting Data** - Train/Test split
-8. **PCA** - Principal Component Analysis for dimensionality reduction
-9. **Correlation Analysis** - Before and after PCA
+### 1. `ipl_analysis.ipynb` - PCA Analysis
+- Data Cleaning & Preprocessing
+- Feature Engineering & Transformation
+- StandardScaler & LabelEncoder
+- PCA (Principal Component Analysis)
+- Correlation Analysis (Before & After PCA)
+
+### 2. `ipl_sql_analysis.ipynb` - SQL Analysis
+- SQLite database setup and data loading
+- 10 analytical SQL queries:
+  1. Matches per season
+  2. Top winning teams
+  3. Toss decision impact
+  4. Match results distribution
+  5. Top venues
+  6. Player of the match leaders
+  7. Head-to-head matchups
+  8. Season-wise top teams
+  9. City-wise statistics
+  10. Toss + match win patterns
+- Data visualizations for each query
+
+## Project Structure
+
+```
+ipl-analysis/
+├── ipl_analysis.ipynb       # PCA analysis notebook
+├── ipl_sql_analysis.ipynb   # SQL analysis notebook
+├── ipl_data.db              # SQLite database (auto-generated)
+├── matches.csv              # IPL match dataset
+├── README.md
+└── requirements.txt
+```
 
 ## Requirements
 
@@ -26,15 +50,33 @@ pip install -r requirements.txt
 
 ## Usage
 
-Open `ipl_analysis.ipynb` in Jupyter Notebook or Google Colab:
-
+### PCA Analysis:
 ```bash
 jupyter notebook ipl_analysis.ipynb
 ```
 
+### SQL Analysis:
+```bash
+jupyter notebook ipl_sql_analysis.ipynb
+```
+
 ## Dataset
 
-The project uses `matches.csv` containing IPL match data with 1095 rows and 20 columns including match details, teams, venues, and results.
+The project uses `matches.csv` containing IPL match data with **1095 rows** and **20 columns** including:
+- Match ID, Season, City, Date
+- Teams (team1, team2)
+- Toss details
+- Match results and margins
+- Venue and umpire information
+
+## Tools Used
+
+- **Python** - Programming language
+- **Pandas** - Data manipulation
+- **SQLite3** - SQL database
+- **SQLAlchemy** - Database connectivity
+- **Scikit-learn** - PCA and preprocessing
+- **Matplotlib & Seaborn** - Visualization
 
 ## License
 
