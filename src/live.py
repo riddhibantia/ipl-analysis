@@ -25,7 +25,7 @@ from .features import ELO_HOME, ELO_INIT, ELO_K, _elo_expected
 
 ROOT = Path(__file__).resolve().parent.parent
 MODEL_DIR = ROOT / "model"
-CUTOFF = 2022  # train on season_year <= CUTOFF, test after
+CUTOFF = 2024  # train on season_year <= CUTOFF, test after
 
 VALID_EXTRAS_LEGAL = {"wides", "noballs"}
 
@@ -317,6 +317,7 @@ def main():
          "features_1": INN1, "features_2": INN2}, indent=2))
     aux = {"venue_avg": {v: round(float(a), 1) for v, a in venue_avg_all.items()},
            "global_par": round(global_mean, 1),
+           "balls": int(len(d)),
            "team_pool": {t: {k: round(float(v), 2) for k, v in p.items()}
                          for t, p in current_pools.items()},
            "global_pool": {k: round(float(v), 2) for k, v in global_pool.items()}}

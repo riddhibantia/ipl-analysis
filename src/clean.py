@@ -137,7 +137,14 @@ def is_home(team, venue):
 def load_matches(path="matches.csv"):
     """Load + clean raw matches.csv. Returns dataframe sorted by date."""
     df = pd.read_csv(path)
-    df["date"] = pd.to_datetime(df["date"], errors="coerce", dayfirst=True)
+    raw = df["date"].astype(str)
+    iso = raw.str.match(r"^\d{4}-\d{2}-\d{2}")
+    df["date"] = pd.NaT
+    df.loc[iso, "date"] = pd.to_datetime(raw[iso], format="%Y-%m-%d",
+                                         errors="coerce").values
+    df.loc[~iso, "date"] = pd.to_datetime(raw[~iso], dayfirst=True,
+                                          errors="coerce").values
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df = df.dropna(subset=["date"]).drop_duplicates()
     df["team1"] = df["team1"].apply(normalize_team)
     df["team2"] = df["team2"].apply(normalize_team)

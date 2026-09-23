@@ -177,6 +177,65 @@ def metrics():
     return json.loads((ROOT / "model" / "toss_metrics.json").read_text())
 
 
+_profiles = _players = None
+
+
+def _load_analytics():
+    global _profiles, _players
+    if _profiles is None:
+        _profiles = json.loads((ROOT / "model" / "team_profiles.json").read_text())
+        _players = json.loads((ROOT / "model" / "player_stats.json").read_text())
+    return _profiles, _players
+
+
+@app.get("/api/overview")
+def overview():
+    df = matches()
+    profiles, players = _load_analytics()
+    info = json.loads((ROOT / "model" / "dataset_info.json").read_text())
+    aux = json.loads((ROOT / "model" / "live_aux.json").read_text())
+    recent = df[(df["season_year"] >= 2025) & df["decided"]]
+    top_teams = recent["winner"].value_counts().head(5).reset_index()
+    top_teams.columns = ["team", "wins"]
+    return {
+        "seasons": info["seasons"],
+        "matches": info["matches"],
+        "balls": aux.get("balls", 0),
+        "teams": len(profiles),
+        "top_teams_recent": [{**r, **{k: v for k, v in team_entry(r["team"]).items()
+                                      if k != "name"}}
+                             for r in top_teams.to_dict(orient="records")],
+        "orange_cap": players["recent_batting"][0] if players["recent_batting"] else None,
+        "purple_cap": players["recent_bowling"][0] if players["recent_bowling"] else None,
+    }
+
+
+@app.get("/api/teams/profile")
+def team_profile(name: str = Query(...)):
+    from src.clean import normalize_team
+    profiles, _ = _load_analytics()
+    key = normalize_team(name)
+    if key not in profiles:
+        raise HTTPException(404, f"unknown team: {name}")
+    return {"profile": profiles[key],
+            "meta": team_entry(key)}
+
+
+@app.get("/api/players")
+def players(role: str = Query("batting", pattern="^(batting|bowling)$"),
+            era: str = Query("all", pattern="^(all|recent)$"),
+            q: str = Query("", min_length=0),
+            limit: int = Query(50, le=200)):
+    _, pl = _load_analytics()
+    key = f"{'recent_' if era == 'recent' else ''}{role}"
+    rows = pl.get(key, [])
+    if q:
+        ql = q.lower()
+        col = "batter" if role == "batting" else "bowler"
+        rows = [r for r in rows if ql in str(r.get(col, "")).lower()]
+    return {"role": role, "era": era, "count": len(rows), "rows": rows[:limit]}
+
+
 # React build (web/dist) takes precedence; legacy vanilla UI is the fallback.
 _STATIC = DIST if (DIST / "index.html").exists() else FRONTEND
 if _STATIC.exists():

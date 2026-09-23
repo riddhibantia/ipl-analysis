@@ -8,9 +8,10 @@
 ![pytest](https://img.shields.io/badge/pytest-18_passed-green?logo=pytest&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-Pre-match + in-match intelligence for the IPL (2008–2024): a **Match Centre** (ratings, head-to-head, form, venue edge),
-a **Live Win Predictor** trained on 260k balls, a **Toss Lab** (bat-first vs chase advisor), **Elo ratings**, and **venue analytics** —
-served by a FastAPI backend with a light, mobile-friendly UI in the style of FotMob / SofaScore, using official IPL team logos.
+Pre-match + in-match intelligence for the IPL (2008–2026): an **Overview** landing page, a **Match Centre** (ratings, head-to-head, form, venue edge),
+a **Live Win Predictor** trained on 295k balls, **Player** leaderboards (Orange/Purple caps, strike rates, economies),
+**Team** strength/weakness profiles, a **Toss Lab** (bat-first vs chase advisor), **Elo ratings**, and **venue analytics** —
+served by a FastAPI backend with a React + Vite + Tailwind UI in the style of FotMob / SofaScore, using official IPL team logos.
 
 ## Architecture
 
@@ -53,26 +54,29 @@ docker build -t ipl-intelligence .
 docker run -p 8000:8000 ipl-intelligence
 ```
 
-Note: `data/deliveries.csv` (26.7MB, 260,920 balls) is gitignored — refresh via `data/README.md`. Without it, `src/train.py` skips the live model and `/api/live` returns 503 with a clear message; toss + ratings + insights still work.
+Note: `data/deliveries.csv` (≈30MB, 295,718 balls) is gitignored — refresh via `data/README.md` or `scripts/refresh_cricsheet.py`. Without it, `src/train.py` skips the live model and `/api/live` returns 503 with a clear message; toss + ratings + insights still work.
 
 ## What the models actually do (honest numbers)
 
 | Task | Model | Evaluation |
 |---|---|---|
-| **Live win proba, chase** (runs/wkts/req-rate + Elo + venue par) | Logistic regression on 19.8k innings-states | 4-fold CV AUC **0.88**, 2023–24 holdout acc **78%**, AUC **0.87** |
-| **Live win proba, 1st inns** (runs/wkts + Elo + squad pools*) | Logistic regression on 21.6k innings-states | CV AUC **0.66**, holdout acc **63%**, AUC **0.69** |
-| Toss decision: P(captain bats first \| venue, month, season) | Calibrated logistic regression | 5-fold CV AUC **0.65**, post-2021 holdout accuracy **75%** |
+| **Live win proba, chase** (runs/wkts/req-rate + Elo + venue par) | Logistic regression on 22.4k innings-states | 4-fold CV AUC **0.88**, 2025–26 holdout acc **82%**, AUC **0.92** |
+| **Live win proba, 1st inns** (runs/wkts + Elo + squad pools*) | Logistic regression on 24.4k innings-states | CV AUC **0.67**, holdout acc **64%**, AUC **0.72** |
+| Toss decision: P(captain bats first \| venue, month, season) | Calibrated logistic regression | 5-fold CV AUC **0.66**, post-2023 holdout accuracy **80%** |
 | Team strength | Elo (K=24, home +30), chronological, leakage-free | Descriptive ratings + form tables |
 | Match-winner prediction | **Deliberately not shipped** | 3 models trained on 872 pre-2022 matches scored 45–50% on 2022–24 holdout (AUC < 0.5). The 2022 mega-auction reset squads and broke every historical feature — so the app shows analytics instead of a fake predictor. |
 
 Example intelligence: captains winning the toss at M Chinnaswamy Stadium chase ~90% of the time; at Chepauk they bat first ~61%.
 
-\* Squad pools: chronological career strike-rate / average / economy per (player, team) — only balls played *for that team* before the match count, so auction team-switches are handled. They lift the 1st-innings model (test AUC 0.67 → 0.69); the chase is dominated by match state, so it stays state-only.
+\* Squad pools: chronological career strike-rate / average / economy per (player, team) — only balls played *for that team* before the match count, so auction team-switches are handled. They lift the 1st-innings model (test AUC 0.67 → 0.72); the chase is dominated by match state, so it stays state-only.
 
 ## API
 
 | Endpoint | Description |
 |---|---|
+| `GET /api/overview` | Landing stats, 2025–26 form teams, Orange/Purple caps |
+| `GET /api/teams/profile?name=` | Strengths/weaknesses, phase splits, chase/defend/home/away |
+| `GET /api/players?role=&era=&q=&limit=` | Batting/bowling leaderboards, career or 2025–26 + search |
 | `GET /api/match-centre?team1=&team2=&venue=&month=` | FotMob-style bundle: ratings, h2h, venue edge, toss advice |
 | `POST /api/live` `{innings, batting_team, bowling_team, venue, over, runs, wkts, target}` | Live win probability + factors |
 | `GET /api/live-curve` | Holdout accuracy by over (powers the UI chart) |
@@ -88,15 +92,23 @@ Example intelligence: captains winning the toss at M Chinnaswamy Stadium chase ~
 ├── web/src/               # React + Vite + Tailwind UI (MatchCentre, Live, Toss, Teams, Venues+Rankings, Model)
 ├── web/dist/              # production build (generated via npm run build, gitignored, served by FastAPI)
 ├── api/main.py            # FastAPI app (API + serves web/dist, fallback: frontend/)
-├── src/                   # clean.py, features.py, live.py, train.py, predict.py (ML pipeline)
+├── src/                   # clean.py, features.py, live.py, analytics.py, train.py, predict.py (ML pipeline)
+├── scripts/refresh_cricsheet.py  # pull new seasons from Cricsheet into the CSVs
 ├── data/README.md         # ball-by-ball source + refresh (deliveries.csv gitignored)
 ├── frontend/              # legacy vanilla UI (fallback if web/dist missing)
 ├── notebooks/             # original exploratory analysis (archived)
-├── tests/                 # 18 pytest tests (features + API + live model)
-├── model/                 # generated artifacts (gitignored, via python -m src.train)
-├── matches.csv            # 1,095 IPL matches, 2008–2024 (tracked)
-├── screenshots/           # add demo captures here
+├── tests/                 # 22 pytest tests (features + API + live + analytics)
+├── model/                 # generated artifacts (via python -m src.train)
+├── matches.csv            # 1,243 IPL matches, 2008–2026
 └── Dockerfile             # multi-stage: node build + python serve
+
+## Refreshing data for a new season
+
+```bash
+# download https://cricsheet.org/downloads/ipl_json.zip, unzip, then:
+python scripts/refresh_cricsheet.py --json-dir <unzipped> --apply
+python -m src.train
+```
 ```
 
 ## Frontend development
@@ -122,4 +134,4 @@ python -m pytest tests/ -q   # 18 passed
 
 ## Data & credits
 
-Match data (`matches.csv`, 1,095 matches) + ball-by-ball data (`data/deliveries.csv`, 260,920 balls, same IDs — see `data/README.md` for source/refresh); team logos via the official IPL site CDN (`iplt20.com`, `icon-dark` set for the light theme) with offline badge fallback. Built for educational purposes.
+Match data (`matches.csv`, 1,243 matches, 2008–2026) + ball-by-ball data (`data/deliveries.csv`, 295,718 balls, same IDs). Base data: Kaggle-schema mirror; 2025–26 top-up: Cricsheet (`scripts/refresh_cricsheet.py` re-runs the pull — see `data/README.md`). Team logos via the official IPL site CDN (`iplt20.com`, `icon-dark` set for the light theme) with offline badge fallback. Built for educational purposes.

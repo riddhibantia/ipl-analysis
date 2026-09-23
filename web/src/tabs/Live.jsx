@@ -132,7 +132,9 @@ export default function Live({ meta }) {
 
       <Card>
         <h2 className="text-[17px] font-bold">How accuracy grows during a match</h2>
-        <p className="mb-1 text-[13px] text-slate-500">Holdout accuracy by overs completed (2023–24).</p>
+        <p className="mb-1 text-[13px] text-slate-500">
+          Holdout accuracy by overs completed ({meta.seasons.slice(-2).join("–")}).
+        </p>
         {curve ? <Curve c={curve} /> : <p className="text-sm text-slate-500">Loading…</p>}
       </Card>
     </>

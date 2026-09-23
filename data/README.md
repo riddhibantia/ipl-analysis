@@ -1,16 +1,18 @@
 # Ball-by-ball data
 
-`deliveries.csv` — 260,920 balls across the same 1,095 matches as `matches.csv`
-(IDs join 1:1, verified).
+`deliveries.csv` — 295,718 balls across the same 1,243 matches as `matches.csv`
+(IDs join 1:1, verified). 2008–2024: Kaggle-schema mirror
+(`github.com/Sukrut10k/ipl-match-analysis`, file `data/deliveries.csv`,
+original provenance Cricsheet). 2025–2026: appended from Cricsheet
+(`https://cricsheet.org/downloads/ipl_json.zip`).
 
-Source: Kaggle-schema mirror of the IPL ball-by-ball dataset
-(`github.com/Sukrut10k/ipl-match-analysis`, file `data/deliveries.csv`).
-Original provenance: Cricsheet.
-
-Refresh:
+Refresh for a new season (re-runnable, dedupes by match ID):
 
 ```powershell
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Sukrut10k/ipl-match-analysis/main/data/deliveries.csv" -OutFile "data/deliveries.csv"
+# 1. download + unzip ipl_json.zip from cricsheet.org/downloads
+# 2. from the repo root:
+python scripts/refresh_cricsheet.py --json-dir <unzipped> --apply
+python -m src.train
 ```
 
 Notes: only innings 1–2 are used (3+ are super overs); team names are

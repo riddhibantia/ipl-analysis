@@ -20,7 +20,7 @@ export default function Model() {
           post-2021 holdout accuracy <b>{m ? `${Math.round(m.test.accuracy * 100)}%` : "…"}</b>.
         </li>
         <li>
-          <b>Live win probability (shipped):</b> two logistic models on 41k innings-states from 260k balls,
+          <b>Live win probability (shipped):</b> two logistic models on 47k innings-states from 295k balls,
           with chronological squad pools (career SR/avg/econ per player-team).
           Chase model test AUC <b>{lm ? lm.summary.innings_2.test_auc.toFixed(2) : "…"}</b>;
           1st-innings <b>{lm ? lm.summary.innings_1.test_auc.toFixed(2) : "…"}</b>.
@@ -36,7 +36,7 @@ export default function Model() {
           feature (Elo alone: 39% in 2022). Pre-toss match-level prediction is a coin flip on this data.
         </li>
         <li>
-          <b>Data:</b> 1,095 IPL matches (2008–2024), 1,090 decided + 260,920 balls.
+          <b>Data:</b> 1,243 IPL matches (2008–2026), 295k balls. Squad pools use chronological career stats per (player, team).
         </li>
       </ul>
       <p className="mt-3 text-xs text-slate-500">

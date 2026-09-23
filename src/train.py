@@ -41,7 +41,7 @@ def toss_frame(df):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", default=str(ROOT / "matches.csv"))
-    ap.add_argument("--cutoff", type=int, default=2021)
+    ap.add_argument("--cutoff", type=int, default=2023)
     args = ap.parse_args()
 
     df = load_matches(args.csv)
@@ -109,12 +109,23 @@ def main():
     con = sqlite3.connect(db_path)
     df.to_sql("matches", con, index=False)
     con.close()
+    info = {"matches": len(df),
+            "seasons": sorted(df["season_year"].dropna().unique().astype(int).tolist()),
+            "teams": sorted(pd.concat([df["team1"], df["team2"]]).unique().tolist())}
+    (MODEL_DIR / "dataset_info.json").write_text(json.dumps(info, indent=2))
     print(f"saved toss model ({best}) + ratings + {db_path.name}")
 
     # ---- 4. live win probability (needs data/deliveries.csv) ----
     if (ROOT / "data" / "deliveries.csv").exists():
         from .live import main as live_main
         live_main()
+        from .analytics import build_all
+        from .live import load_deliveries
+        profiles, players = build_all(load_deliveries(), df)
+        (MODEL_DIR / "team_profiles.json").write_text(json.dumps(profiles, indent=2))
+        (MODEL_DIR / "player_stats.json").write_text(json.dumps(players, indent=2))
+        print(f"saved {len(profiles)} team profiles + "
+              f"{len(players['batting'])} batters + {len(players['bowling'])} bowlers")
     else:
         print("skipping live model: data/deliveries.csv not found "
               "(see data/README.md)")

@@ -3,22 +3,26 @@ import { api } from "./api";
 import Live from "./tabs/Live";
 import MatchCentre from "./tabs/MatchCentre";
 import Model from "./tabs/Model";
+import Overview from "./tabs/Overview";
+import Players from "./tabs/Players";
 import Tables, { Ratings } from "./tabs/Tables";
 import Teams from "./tabs/Teams";
 import Toss from "./tabs/Toss";
 
 const TABS = [
+  ["overview", "Overview"],
   ["centre", "Match Centre"],
   ["live", "Live Predictor"],
-  ["toss", "Toss Lab"],
+  ["players", "Players"],
   ["teams", "Teams"],
+  ["toss", "Toss Lab"],
   ["venues", "Venues"],
   ["ratings", "Ratings"],
   ["model", "Model"],
 ];
 
 export default function App() {
-  const [tab, setTab] = useState("centre");
+  const [tab, setTab] = useState("overview");
   const [meta, setMeta] = useState(null);
   const [ratings, setRatings] = useState([]);
   const [venues, setVenues] = useState([]);
@@ -45,7 +49,7 @@ export default function App() {
           <div>
             <h1 className="text-[22px] font-bold tracking-tight">IPL Intelligence</h1>
             <p className="text-xs opacity-90">
-              Match centre · live predictor · toss lab · ratings · 2008–2024
+              {meta ? `Match centre · live predictor · players · ${meta.seasons[0]}–${meta.seasons[meta.seasons.length - 1]}` : "Loading…"}
             </p>
           </div>
           <div className="ml-auto whitespace-nowrap rounded-full border border-white/40 bg-white/15 px-3 py-1.5 text-xs font-bold">
@@ -80,10 +84,12 @@ export default function App() {
         {!err && !meta && <p className="text-sm text-slate-500">Loading…</p>}
         {meta && (
           <div key={tab} className="fade-in">
+            {tab === "overview" && <Overview go={setTab} />}
             {tab === "centre" && <MatchCentre meta={meta} />}
             {tab === "live" && <Live meta={meta} />}
-            {tab === "toss" && <Toss meta={meta} />}
+            {tab === "players" && <Players />}
             {tab === "teams" && <Teams meta={meta} ratings={ratings} />}
+            {tab === "toss" && <Toss meta={meta} />}
             {tab === "venues" && <Tables venues={venues} />}
             {tab === "ratings" && <Ratings ratings={ratings} />}
             {tab === "model" && <Model />}
