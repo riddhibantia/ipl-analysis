@@ -1,5 +1,21 @@
 ipl_data.db
+ipl.db
 __pycache__/
 .ipynb_checkpoints/
 *.pyc
+*.pkl
 .DS_Store
+.venv/
+venv/
+node_modules/
+.pytest_cache/
+*.log
+.coverage
+# Large ball-by-ball source (26MB) — not in git, refresh via data/README.md
+data/deliveries.csv
+# Generated artifacts — rebuild with python -m src.train
+model/*.pkl
+model/*.json
+ipl.db
+# Built UI — rebuild with npm run build or Docker
+web/dist/

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IPL Intelligence — Match Centre, Toss Lab & Ratings</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="ball">IPL</div>
+    <div>
+      <h1>IPL Intelligence</h1>
+      <p>Match centre &middot; live predictor &middot; toss lab &middot; ratings &middot; 2008–2024</p>
+    </div>
+    <div class="season-tag">TATA IPL DATA</div>
+  </div>
+</header>
+<div class="tabbar">
+  <nav class="tabs" id="tabs">
+    <button data-tab="centre" class="active">Match Centre</button>
+    <button data-tab="live">Live Predictor</button>
+    <button data-tab="toss">Toss Lab</button>
+    <button data-tab="teams">Teams</button>
+    <button data-tab="venues">Venues</button>
+    <button data-tab="ratings">Ratings</button>
+    <button data-tab="model">Model</button>
+  </nav>
+</div>
+<main>
+  <section id="tab-centre" class="tabpage active">
+    <div class="card">
+      <h2>Pre-match Centre</h2>
+      <p class="sub">FotMob-style preview: ratings, head-to-head, form, venue edge and toss advice.</p>
+      <div class="grid2">
+        <div>
+          <label>Team A</label><select id="mc-t1"></select>
+          <label>Team B</label><select id="mc-t2"></select>
+        </div>
+        <div>
+          <label>Venue</label><select id="mc-venue"></select>
+          <label>Month</label>
+          <select id="mc-month">
+            <option value="3">March</option><option value="4" selected>April</option>
+            <option value="5">May</option><option value="6">June</option>
+            <option value="9">September</option><option value="10">October</option>
+            <option value="11">November</option>
+          </select>
+        </div>
+      </div>
+      <button class="primary" id="mc-go">Analyze matchup</button>
+    </div>
+    <div id="mc-out"></div>
+  </section>
+
+  <section id="tab-live" class="tabpage">
+    <div class="card">
+      <h2>Live Win Predictor</h2>
+      <p class="sub">Ball-by-ball model (260k deliveries): set the match state, get win probability.</p>
+      <div class="grid2">
+        <div>
+          <label>Innings</label>
+          <select id="live-inn"><option value="1">1st — setting a target</option><option value="2" selected>2nd — chase</option></select>
+          <label>Batting team</label><select id="live-bat"></select>
+          <label>Bowling team</label><select id="live-bowl"></select>
+          <label>Venue</label><select id="live-venue"></select>
+        </div>
+        <div>
+          <label>Overs completed: <b id="live-over-v">15</b></label>
+          <input type="range" id="live-over" min="1" max="19" value="15">
+          <label>Runs scored</label><input type="number" id="live-runs" value="140" min="0" max="300">
+          <label>Wickets lost</label><input type="number" id="live-wkts" value="3" min="0" max="9">
+          <div id="live-target-wrap"><label>Target (chase)</label><input type="number" id="live-target" value="180" min="1" max="300"></div>
+        </div>
+      </div>
+      <button class="primary" id="live-go">Predict</button>
+      <div class="chips" id="live-presets"></div>
+    </div>
+    <div id="live-out"></div>
+    <div class="card"><h2>How accuracy grows during a match</h2>
+      <p class="sub">Holdout accuracy by overs completed (2023–24).</p>
+      <div id="live-curve"></div>
+    </div>
+  </section>
+
+  <section id="tab-toss" class="tabpage">
+    <div class="card">
+      <h2>Toss Lab</h2>
+      <p class="sub">What does the captain do after winning the toss here? Model: venue + month + season.</p>
+      <label>Venue</label><select id="toss-venue"></select>
+      <label>Month</label>
+      <select id="toss-month">
+        <option value="3">March</option><option value="4" selected>April</option>
+        <option value="5">May</option><option value="6">June</option>
+        <option value="9">September</option><option value="10">October</option>
+        <option value="11">November</option>
+      </select>
+      <button class="primary" id="toss-go">Get toss advice</button>
+    </div>
+    <div id="toss-out"></div>
+  </section>
+
+  <section id="tab-teams" class="tabpage">
+    <div class="card"><h2>Teams</h2><p class="sub">Tap a team for recent form.</p>
+      <div class="teamgrid" id="team-grid"></div>
+    </div>
+    <div id="team-out"></div>
+  </section>
+
+  <section id="tab-venues" class="tabpage">
+    <div class="card"><h2>Venues</h2><p class="sub">Where does batting first still win tosses? Toss-bat rate and toss-to-win conversion.</p>
+      <div id="venue-table"></div>
+    </div>
+  </section>
+
+  <section id="tab-ratings" class="tabpage">
+    <div class="card"><h2>Elo Ratings</h2><p class="sub">Team strength from full match history (2008–2024). Higher is stronger.</p>
+      <div id="ratings-table"></div>
+    </div>
+  </section>
+
+  <section id="tab-model" class="tabpage">
+    <div class="card method"><h2>Methodology</h2>
+      <ul>
+        <li><b>Toss advisor (shipped):</b> calibrated logistic regression on venue + month + season. 5-fold CV AUC <b id="m-cv">…</b>; post-2021 holdout accuracy <b id="m-acc">…</b>.</li>
+        <li><b>Live win probability (shipped):</b> two logistic models on 41k innings-states from 260k balls. Chase model test AUC <b id="m-live2">…</b>; 1st-innings <b id="m-live1">…</b>. See Live Predictor tab for the accuracy-by-over curve.</li>
+        <li><b>Ratings:</b> Elo (K=24, home +30) updated chronologically, plus all-time win %, last-5 form, head-to-head and venue records — all leakage-free.</li>
+        <li><b>Win predictor (deliberately not shipped):</b> tested 3 models on 872 pre-2022 matches and held out 2022–24. Accuracy stayed at 45–50% — the 2022 mega-auction reset squads and broke every historical feature (Elo alone: 39% in 2022). Pre-toss match-level prediction is a coin flip on this data, so it is analytics + toss intelligence instead of a fake predictor.</li>
+        <li><b>Data:</b> 1,095 IPL matches (2008–2024), 1,090 decided + 260,920 balls. Squad pools use chronological career stats per (player, team), so auction team-switches are handled with no leakage.</li>
+      </ul>
+      <p class="footnote">API: <code>/api/match-centre</code> · <code>/api/live</code> · <code>/api/live-curve</code> · <code>/api/toss</code> · <code>/api/ratings</code> · <code>/api/venues</code> · <code>/api/insights/*</code> · <code>/api/metrics</code></p>
+    </div>
+  </section>
+</main>
+<div class="footer">IPL Intelligence · data 2008–2024 · built with FastAPI + scikit-learn · logos via iplt20.com</div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --color-ink: #0e1e33;
+  --color-mist: #66788f;
+  --color-pitch: #edf0f5;
+  --color-accent: #1450c8;
+  --color-accent2: #6d28d9;
+  --color-gold: #ffd23f;
+  --color-win: #0e9f6e;
+  --color-lose: #e02424;
+  --color-chase: #f79009;
+}
+
+body {
+  background: var(--color-pitch);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.tnum { font-variant-numeric: tabular-nums; }
+
+input[type="range"] { accent-color: var(--color-accent); }
+
+.hero-pattern {
+  background:
+    radial-gradient(circle at 88% 20%, rgba(255, 255, 255, 0.14), transparent 42%),
+    radial-gradient(circle at 12% 85%, rgba(255, 210, 63, 0.16), transparent 40%),
+    linear-gradient(100deg, #0a1f44 0%, #1450c8 55%, #6d28d9 100%);
+}
+
+.fade-in { animation: fade 0.18s ease-in; }
+@keyframes fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; }
+}
+
+.tabs-scroll::-webkit-scrollbar { height: 0; }
