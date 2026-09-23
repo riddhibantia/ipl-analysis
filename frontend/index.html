@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>IPL Intelligence — Match Centre, Toss Lab & Ratings</title>
+<title>IPL Pulse (legacy UI)</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -11,8 +11,8 @@
   <div class="brand">
     <div class="ball">IPL</div>
     <div>
-      <h1>IPL Intelligence</h1>
-      <p>Match centre &middot; live predictor &middot; toss lab &middot; ratings &middot; 2008–2024</p>
+      <h1>IPL Pulse</h1>
+      <p>Legacy view &middot; use the main dashboard &middot; 2008–2026</p>
     </div>
     <div class="season-tag">TATA IPL DATA</div>
   </div>
@@ -127,13 +127,13 @@
         <li><b>Live win probability (shipped):</b> two logistic models on 41k innings-states from 260k balls. Chase model test AUC <b id="m-live2">…</b>; 1st-innings <b id="m-live1">…</b>. See Live Predictor tab for the accuracy-by-over curve.</li>
         <li><b>Ratings:</b> Elo (K=24, home +30) updated chronologically, plus all-time win %, last-5 form, head-to-head and venue records — all leakage-free.</li>
         <li><b>Win predictor (deliberately not shipped):</b> tested 3 models on 872 pre-2022 matches and held out 2022–24. Accuracy stayed at 45–50% — the 2022 mega-auction reset squads and broke every historical feature (Elo alone: 39% in 2022). Pre-toss match-level prediction is a coin flip on this data, so it is analytics + toss intelligence instead of a fake predictor.</li>
-        <li><b>Data:</b> 1,095 IPL matches (2008–2024), 1,090 decided + 260,920 balls. Squad pools use chronological career stats per (player, team), so auction team-switches are handled with no leakage.</li>
+        <li><b>Data:</b> 1,243 IPL matches (2008–2026), 295k balls. Squad pools use chronological career stats per (player, team), so auction team-switches are handled with no leakage.</li>
       </ul>
       <p class="footnote">API: <code>/api/match-centre</code> · <code>/api/live</code> · <code>/api/live-curve</code> · <code>/api/toss</code> · <code>/api/ratings</code> · <code>/api/venues</code> · <code>/api/insights/*</code> · <code>/api/metrics</code></p>
     </div>
   </section>
 </main>
-<div class="footer">IPL Intelligence · data 2008–2024 · built with FastAPI + scikit-learn · logos via iplt20.com</div>
+<div class="footer">IPL Pulse (legacy view) · data 2008–2026 · built with FastAPI + scikit-learn · logos via iplt20.com</div>
 <script src="app.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-"""IPL Intelligence API: match centre, toss lab, ratings, SQL-backed insights."""
+"""IPL Pulse API: dashboard backend — match centre, live predictor, analytics, insights."""
 
 import json
 import sqlite3
@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 FRONTEND = ROOT / "frontend"
 DIST = ROOT / "web" / "dist"
 
-app = FastAPI(title="IPL Intelligence API", version="1.0.0")
+app = FastAPI(title="IPL Pulse API", version="1.0.0")
 
 _matches = None
 

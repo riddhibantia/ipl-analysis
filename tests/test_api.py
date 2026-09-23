@@ -51,4 +51,4 @@ def test_insights():
 def test_frontend_served():
     r = client.get("/")
     assert r.status_code == 200
-    assert "IPL Intelligence" in r.text
+    assert "IPL Pulse" in r.text

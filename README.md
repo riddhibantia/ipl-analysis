@@ -1,30 +1,39 @@
-# IPL Intelligence — Match Centre, Live Predictor, Toss Lab & Ratings
+# IPL Pulse — IPL Analytics Dashboard (2008–2026)
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-Vite-61DAFB?logo=react&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind-v4-38BDF8?logo=tailwindcss&logoColor=white)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-F7931E?logo=scikit-learn&logoColor=white)
-![pytest](https://img.shields.io/badge/pytest-18_passed-green?logo=pytest&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-26_passed-green?logo=pytest&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-Pre-match + in-match intelligence for the IPL (2008–2026) as a **dark analytics dashboard**
-(Courtix-style glassmorphism: black/navy, lime + periwinkle accents): an **Overview** hero with
-head-to-head panel, toss heatmap and season record, a **Matches** explorer, **Match Centre**,
-**Live Win Predictor** trained on 295k balls, **Player** leaderboards, **Team** strength/weakness
-profiles, **Venues**, **Analytics** (honest PCA), **Rankings**, **Insights**, **Toss Lab** and **Model** —
-React + Vite + Tailwind + Recharts served by FastAPI, using official IPL team logos.
+**What this is:** a dark, Courtix-style analytics dashboard for the Indian Premier League —
+1,243 matches and 295,718 balls (2008–2026). Open it and you get:
+
+- **Overview** — season-pulse hero, head-to-head explorer, toss heatmap, season record
+- **Matches** — searchable results explorer (season / team / text)
+- **Match Centre** — Elo ratings, head-to-head, form, venue edge, toss call
+- **Live Predictor** — win probability from any match state (chase AUC 0.92)
+- **Teams** — strengths/weaknesses vs league average, powerplay/middle/death splits
+- **Players** — Orange/Purple-cap leaderboards, strike rates, economies, search
+- **Venues · Rankings · Insights · Toss Lab** — grounds, tallies, findings, advice
+- **Analytics** — honest PCA of match state (why pre-toss prediction is hard)
+- **Model** — methodology, metrics, full API reference
+
+Stack: React + Vite + Tailwind + Recharts served by FastAPI; scikit-learn models; official IPL team logos.
 
 ## Architecture
 
 ```
-React + Vite + Tailwind (web/src, 6 tabs)
+React + Vite + Tailwind + Recharts (web/src, 13 views)
   │  REST (/api/*)
   ▼
 FastAPI (api/main.py) → scikit-learn models + SQLite (ipl.db, built by src/train.py)
   ├── match-centre bundles (Elo K=24 + venue + form + h2h)
-  ├── live win proba (19.8k chase states / 21.6k 1st-inns states)
+  ├── live win proba (22.4k chase states / 24.4k 1st-inns states)
   ├── toss advice (calibrated logreg, venue + month + season)
+  ├── team/player analytics (phase splits, leaderboards, PCA bundle)
   └── SQL insights (teams, toss, h2h, form)
 ```
 

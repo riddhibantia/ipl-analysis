@@ -1,6 +1,4 @@
-# web/ — React + Vite + Tailwind frontend
-
-Source for the IPL Intelligence UI. See the root README for the full project.
+# web/ — React + Vite + Tailwind frontend for IPL Pulse
 
 ```bash
 cd web
