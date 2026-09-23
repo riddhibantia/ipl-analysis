@@ -1,4 +1,8 @@
-# IPL 2025 Player Stats Analysis and Prediction
+# IPL Match Data Analysis
+
+![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
+![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-orange?logo=jupyter&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
 
 Analysis of IPL (Indian Premier League) match data using **PCA (Principal Component Analysis)** and **SQL queries** for data exploration, pattern recognition, and insight extraction.
 
@@ -14,6 +18,7 @@ To predict IPL match outcomes by analyzing the underlying factors within the hig
 - StandardScaler & LabelEncoder
 - PCA (Principal Component Analysis)
 - Correlation Analysis (Before & After PCA)
+- Visualizations: Heatmap, Histograms, Pair Plot, Bar Chart, Violin Plot
 
 ### 2. `ipl_sql_analysis.ipynb` - SQL Analysis
 - SQLite database setup and data loading
@@ -33,13 +38,13 @@ To predict IPL match outcomes by analyzing the underlying factors within the hig
 ## Project Structure
 
 ```
-ipl-analysis/
-├── ipl_analysis.ipynb       # PCA analysis notebook
-├── ipl_sql_analysis.ipynb   # SQL analysis notebook
-├── ipl_data.db              # SQLite database (auto-generated)
-├── matches.csv              # IPL match dataset
-├── README.md
-└── requirements.txt
+IPL-Analysis/
+├── ipl_analysis.ipynb        # PCA analysis notebook
+├── ipl_sql_analysis.ipynb    # SQL analysis notebook
+├── matches.csv               # IPL match dataset
+├── requirements.txt          # Python dependencies
+├── .gitignore                # Git ignore rules
+└── README.md                 # Project documentation
 ```
 
 ## Requirements
@@ -48,17 +53,27 @@ ipl-analysis/
 pip install -r requirements.txt
 ```
 
-## Usage
+## How to Run
 
-### PCA Analysis:
-```bash
-jupyter notebook ipl_analysis.ipynb
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/siddhibantia/IPL-Analysis.git
+   cd IPL-Analysis
+   ```
 
-### SQL Analysis:
-```bash
-jupyter notebook ipl_sql_analysis.ipynb
-```
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Launch Jupyter Notebook:
+   ```bash
+   jupyter notebook
+   ```
+
+4. Open and run either notebook:
+   - `ipl_analysis.ipynb` for PCA analysis
+   - `ipl_sql_analysis.ipynb` for SQL analysis
 
 ## Dataset
 
@@ -73,10 +88,11 @@ The project uses `matches.csv` containing IPL match data with **1095 rows** and 
 
 - **Python** - Programming language
 - **Pandas** - Data manipulation
+- **NumPy** - Numerical operations
 - **SQLite3** - SQL database
-- **SQLAlchemy** - Database connectivity
 - **Scikit-learn** - PCA and preprocessing
 - **Matplotlib & Seaborn** - Visualization
+- **SciPy** - Statistical analysis
 
 ## License
 
