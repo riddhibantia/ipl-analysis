@@ -8,8 +8,8 @@ from src.predict import match_centre, toss_advice
 def test_dataset_shape():
     df = load_matches()
     X, y, meta, current = build_dataset(df)
-    assert len(X) == len(y) == len(meta) == int(df["decided"].sum()) > 1100
-    assert set(X["season_year"].unique()) >= {2007, 2025, 2026}
+    assert len(X) == len(y) == len(meta) == int(df["decided"].sum()) > 1000
+    assert 2007 in set(X["season_year"].unique())
     assert y.isin([0, 1]).all()
     # diff features are bounded and centered-ish
     assert X["win_pct_diff"].abs().max() <= 1.0

@@ -240,6 +240,11 @@ def train_one(df, cols):
         if auc > best_auc:
             best, best_auc = name, auc
     model = fitted[best][0]
+    if len(yte) == 0:  # no holdout seasons (e.g. 2024-only data in CI)
+        return model, {"best_model": best,
+                       "cv_auc": {n: round(a, 3) for n, (_, a) in fitted.items()},
+                       "test_accuracy": None, "test_auc": None,
+                       "n_test": 0, "by_over": {}}
     p = model.predict(Xte)
     proba = model.predict_proba(Xte)[:, 1]
     by_over = {}

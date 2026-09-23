@@ -197,16 +197,18 @@ def overview():
     recent = df[(df["season_year"] >= 2025) & df["decided"]]
     top_teams = recent["winner"].value_counts().head(5).reset_index()
     top_teams.columns = ["team", "wins"]
+    top_rows = top_teams.to_dict(orient="records")
+    recent_bat = players["recent_batting"]
+    recent_bowl = players["recent_bowling"]
     return {
         "seasons": info["seasons"],
         "matches": info["matches"],
         "balls": aux.get("balls", 0),
         "teams": len(profiles),
         "top_teams_recent": [{**r, **{k: v for k, v in team_entry(r["team"]).items()
-                                      if k != "name"}}
-                             for r in top_teams.to_dict(orient="records")],
-        "orange_cap": players["recent_batting"][0] if players["recent_batting"] else None,
-        "purple_cap": players["recent_bowling"][0] if players["recent_bowling"] else None,
+                                      if k != "name"}} for r in top_rows],
+        "orange_cap": recent_bat[0] if recent_bat else None,
+        "purple_cap": recent_bowl[0] if recent_bowl else None,
     }
 
 
