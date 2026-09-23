@@ -130,6 +130,13 @@ def main():
         print("skipping live model: data/deliveries.csv not found "
               "(see data/README.md)")
 
+    # ---- 5. PCA bundle (matches only, always built) ----
+    from .analytics import build_pca
+    pca = build_pca(df)
+    (MODEL_DIR / "pca.json").write_text(json.dumps(pca))
+    print(f"saved PCA ({pca['n']} states, "
+          f"var={pca['explained_variance']})")
+
 
 if __name__ == "__main__":
     main()

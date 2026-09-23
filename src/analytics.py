@@ -4,9 +4,13 @@ Built once at train time (src.analytics.build_all) into
 model/team_profiles.json + model/player_stats.json; served by the API.
 """
 
+import numpy as np
 import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 
 from .clean import is_home
+from .features import FEATURES, build_dataset
 from .live import BOWL_KINDS
 
 PHASES = {"powerplay": (0, 5), "middle": (6, 15), "death": (16, 19)}
@@ -199,3 +203,32 @@ def build_player_stats(deliveries, matches):
 
 def build_all(deliveries, matches):
     return build_team_profiles(deliveries, matches), build_player_stats(deliveries, matches)
+
+
+def build_pca(matches, max_points=1500):
+    """Honest EDA dimensionality reduction.
+
+    PCA on the same leakage-free match-state features used for modelling
+    (team1 perspective). Points coloured by whether team1 won. This shows
+    how separable match states are — it is analysis, not a predictor.
+    """
+    X, y, meta, _ = build_dataset(matches)
+    Xs = StandardScaler().fit_transform(X)
+    pca = PCA(n_components=2, random_state=42)
+    pts = pca.fit_transform(Xs)
+    idx = np.linspace(0, len(X) - 1, min(max_points, len(X))).astype(int)
+    points = [{"x": round(float(pts[i][0]), 3), "y": round(float(pts[i][1]), 3),
+               "team1_win": int(y.iloc[i]), "season": int(meta[i]["season_year"]),
+               "team1": meta[i]["team1"], "team2": meta[i]["team2"]}
+              for i in idx]
+    corr = pd.DataFrame(Xs, columns=FEATURES).corr().round(3)
+    return {
+        "features": FEATURES,
+        "explained_variance": [round(float(v), 3) for v in pca.explained_variance_ratio_],
+        "loadings": {f: [round(float(v), 3) for v in row]
+                     for f, row in zip(FEATURES, pca.components_.T)},
+        "corr_before": {c: {c2: float(corr.loc[c, c2]) for c2 in FEATURES}
+                        for c in FEATURES},
+        "points": points,
+        "n": len(X),
+    }

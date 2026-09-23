@@ -8,10 +8,12 @@
 ![pytest](https://img.shields.io/badge/pytest-18_passed-green?logo=pytest&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-Pre-match + in-match intelligence for the IPL (2008–2026): an **Overview** landing page, a **Match Centre** (ratings, head-to-head, form, venue edge),
-a **Live Win Predictor** trained on 295k balls, **Player** leaderboards (Orange/Purple caps, strike rates, economies),
-**Team** strength/weakness profiles, a **Toss Lab** (bat-first vs chase advisor), **Elo ratings**, and **venue analytics** —
-served by a FastAPI backend with a React + Vite + Tailwind UI in the style of FotMob / SofaScore, using official IPL team logos.
+Pre-match + in-match intelligence for the IPL (2008–2026) as a **dark analytics dashboard**
+(Courtix-style glassmorphism: black/navy, lime + periwinkle accents): an **Overview** hero with
+head-to-head panel, toss heatmap and season record, a **Matches** explorer, **Match Centre**,
+**Live Win Predictor** trained on 295k balls, **Player** leaderboards, **Team** strength/weakness
+profiles, **Venues**, **Analytics** (honest PCA), **Rankings**, **Insights**, **Toss Lab** and **Model** —
+React + Vite + Tailwind + Recharts served by FastAPI, using official IPL team logos.
 
 ## Architecture
 
@@ -77,6 +79,10 @@ Example intelligence: captains winning the toss at M Chinnaswamy Stadium chase ~
 | `GET /api/overview` | Landing stats, 2025–26 form teams, Orange/Purple caps |
 | `GET /api/teams/profile?name=` | Strengths/weaknesses, phase splits, chase/defend/home/away |
 | `GET /api/players?role=&era=&q=&limit=` | Batting/bowling leaderboards, career or 2025–26 + search |
+| `GET /api/matches?season=&team=&q=&limit=&offset=` | Searchable results explorer |
+| `GET /api/rankings?season=` | Victory tally, all-time or per season |
+| `GET /api/analytics/pca` | PCA scatter + loadings + correlations |
+| `GET /api/analytics/toss-heatmap?top=` | Venue × decision conversion table |
 | `GET /api/match-centre?team1=&team2=&venue=&month=` | FotMob-style bundle: ratings, h2h, venue edge, toss advice |
 | `POST /api/live` `{innings, batting_team, bowling_team, venue, over, runs, wkts, target}` | Live win probability + factors |
 | `GET /api/live-curve` | Holdout accuracy by over (powers the UI chart) |
@@ -89,15 +95,16 @@ Example intelligence: captains winning the toss at M Chinnaswamy Stadium chase ~
 ## Project structure
 
 ```
-├── web/src/               # React + Vite + Tailwind UI (MatchCentre, Live, Toss, Teams, Venues+Rankings, Model)
-├── web/dist/              # production build (generated via npm run build, gitignored, served by FastAPI)
+├── web/src/               # React + Vite + Tailwind + Recharts UI (dark Courtix system)
+│   ├── src/tabs/          # Overview, Matches, MatchCentre, Live, Teams, Players, Venues, Analytics, Rankings, Insights, Toss, Model, Help
+│   └── dist/              # production build, served by FastAPI
 ├── api/main.py            # FastAPI app (API + serves web/dist, fallback: frontend/)
 ├── src/                   # clean.py, features.py, live.py, analytics.py, train.py, predict.py (ML pipeline)
 ├── scripts/refresh_cricsheet.py  # pull new seasons from Cricsheet into the CSVs
 ├── data/README.md         # ball-by-ball source + refresh (deliveries.csv gitignored)
 ├── frontend/              # legacy vanilla UI (fallback if web/dist missing)
 ├── notebooks/             # original exploratory analysis (archived)
-├── tests/                 # 22 pytest tests (features + API + live + analytics)
+├── tests/                 # 26 pytest tests (features + API + live + analytics + explorer)
 ├── model/                 # generated artifacts (via python -m src.train)
 ├── matches.csv            # 1,243 IPL matches, 2008–2026
 └── Dockerfile             # multi-stage: node build + python serve
@@ -108,7 +115,6 @@ Example intelligence: captains winning the toss at M Chinnaswamy Stadium chase ~
 # download https://cricsheet.org/downloads/ipl_json.zip, unzip, then:
 python scripts/refresh_cricsheet.py --json-dir <unzipped> --apply
 python -m src.train
-```
 ```
 
 ## Frontend development

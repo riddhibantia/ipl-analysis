@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { MONTHS, api } from "../api";
-import { Card, Field, KV, Meter, PrimaryButton, inputCls, pct1 } from "../ui";
+import { Field, KV, PrimaryButton, pct1 } from "../ui";
+
+const darkInput = "w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white focus:border-[#D8FF02] focus:outline-none [&>option]:bg-[#0B1830]";
 
 export default function Toss({ meta }) {
   const [venue, setVenue] = useState("M Chinnaswamy Stadium, Bengaluru");
@@ -8,39 +10,38 @@ export default function Toss({ meta }) {
   const [data, setData] = useState(null);
 
   async function run() {
-    setData(await api.toss({ venue, month: +month, season_year: 2024 }));
+    setData(await api.toss({ venue, month: +month, season_year: 2026 }));
   }
 
   return (
     <>
-      <Card>
-        <h2 className="text-[17px] font-bold">Toss Lab</h2>
-        <p className="mb-1 text-[13px] text-slate-500">
-          What does the captain do after winning the toss here? Model: venue + month + season.
-        </p>
+      <div className="glass p-5 sm:p-6">
+        <h2 className="text-xl font-semibold">Toss Lab</h2>
+        <p className="micro-label mb-1 normal-case">What does the captain do after winning the toss here? Model: venue + month + season.</p>
         <Field label="Venue">
-          <select className={inputCls} value={venue} onChange={(e) => setVenue(e.target.value)}>
+          <select className={darkInput} value={venue} onChange={(e) => setVenue(e.target.value)}>
             {meta.venues.map((v) => <option key={v}>{v}</option>)}
           </select>
         </Field>
         <Field label="Month">
-          <select className={inputCls} value={month} onChange={(e) => setMonth(e.target.value)}>
+          <select className={darkInput} value={month} onChange={(e) => setMonth(e.target.value)}>
             {MONTHS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </Field>
         <PrimaryButton onClick={run}>Get toss advice</PrimaryButton>
-      </Card>
+      </div>
       {data && (
-        <Card key={data.venue} className="fade-in">
-          <h3 className="mb-3 border-l-4 border-[var(--color-accent)] pl-2.5 text-xs font-extrabold uppercase tracking-[1.1px] text-slate-500">
-            {data.venue}
-          </h3>
-          <div className="flex items-center gap-3.5 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-violet-50 p-3.5">
-            <div className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent2)] text-lg font-extrabold text-white">T</div>
+        <div key={data.venue} className="glass mt-4 p-5 sm:p-6 fade-in">
+          <h3 className="micro-label mb-3">{data.venue}</h3>
+          <div className="flex items-center gap-3.5 rounded-2xl border border-[#D8FF02]/30 bg-[#D8FF02]/5 p-4">
+            <div className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-[#D8FF02] text-lg font-semibold text-black">T</div>
             <div className="min-w-0 flex-1 text-[15px]">
               <b>{data.recommendation}</b>
-              <Meter pct={data.recommendation.startsWith("bat") ? data.p_bat_first * 100 : data.p_bowl_first * 100} />
-              <span className="text-[13px] text-slate-500">
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                <div className="fill-in h-full rounded-full bg-[#D8FF02]"
+                  style={{ width: `${data.recommendation.startsWith("bat") ? data.p_bat_first * 100 : data.p_bowl_first * 100}%` }} />
+              </div>
+              <span className="micro-label">
                 Bat first {Math.round(data.p_bat_first * 100)}% · Bowl first {Math.round(data.p_bowl_first * 100)}%
               </span>
             </div>
@@ -52,7 +53,7 @@ export default function Toss({ meta }) {
               <KV k="Toss winners winning match" v={pct1(data.venue_history.toss_win_match_win_pct)} />
             </div>
           )}
-        </Card>
+        </div>
       )}
     </>
   );

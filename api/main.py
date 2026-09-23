@@ -238,6 +238,89 @@ def players(role: str = Query("batting", pattern="^(batting|bowling)$"),
     return {"role": role, "era": era, "count": len(rows), "rows": rows[:limit]}
 
 
+@app.get("/api/matches")
+def match_list(season: int | None = None, team: str = Query(""),
+               q: str = Query(""), limit: int = Query(30, le=200),
+               offset: int = Query(0, ge=0)):
+    from src.clean import normalize_team
+    df = matches()
+    d = df.copy()
+    if season:
+        d = d[d["season_year"] == season]
+    if team:
+        t = normalize_team(team)
+        d = d[(d["team1"] == t) | (d["team2"] == t)]
+    if q:
+        ql = q.lower()
+        d = d[d.apply(lambda r: ql in str(r["team1"]).lower()
+                      or ql in str(r["team2"]).lower()
+                      or ql in str(r["venue"]).lower()
+                      or ql in str(r["winner"]).lower(), axis=1)]
+    d = d.sort_values("date", ascending=False)
+    total = len(d)
+    rows = []
+    for _, r in d.iloc[offset:offset + limit].iterrows():
+        rows.append({"id": int(r["id"]), "season": int(r["season_year"]),
+                     "date": str(r["date"].date()), "venue": r["venue"],
+                     "team1": {**{"name": r["team1"]},
+                               **{k: v for k, v in team_entry(r["team1"]).items()
+                                   if k != "name"}},
+                     "team2": {**{"name": r["team2"]},
+                               **{k: v for k, v in team_entry(r["team2"]).items()
+                                   if k != "name"}},
+                     "toss": f"{r['toss_winner']} · {r['toss_decision']}",
+                     "winner": r["winner"] if pd.notna(r["winner"]) else None,
+                     "result": (f"{r['winner']} won by {r['result_margin']} {r['result']}"
+                                if pd.notna(r["winner"]) else r["result"]),
+                     "player_of_match": r["player_of_match"]
+                     if pd.notna(r["player_of_match"]) else None})
+    return {"total": total, "limit": limit, "offset": offset, "rows": rows}
+
+
+@app.get("/api/rankings")
+def rankings(season: int | None = None):
+    from src.clean import normalize_team
+    df = matches()
+    d = df[df["decided"]]
+    if season:
+        d = d[d["season_year"] == season]
+    rows = []
+    for t in sorted(set(d["team1"]) | set(d["team2"])):
+        tm = d[(d["team1"] == t) | (d["team2"] == t)]
+        w = int((tm["winner"] == t).sum())
+        rows.append({"team": t, "played": len(tm), "wins": w,
+                     "win_pct": round(w / len(tm), 3) if len(tm) else 0,
+                     **{k: v for k, v in team_entry(t).items() if k != "name"}})
+    rows.sort(key=lambda r: (-r["wins"], -r["win_pct"]))
+    return {"season": season, "rows": rows}
+
+
+@app.get("/api/analytics/pca")
+def analytics_pca():
+    try:
+        return json.loads((ROOT / "model" / "pca.json").read_text())
+    except FileNotFoundError:
+        raise HTTPException(503, "PCA bundle not trained (run python -m src.train)")
+
+
+@app.get("/api/analytics/toss-heatmap")
+def toss_heatmap(top: int = Query(8, le=20)):
+    df = matches()
+    d = df[df["decided"]].copy()
+    d["toss_win_match"] = (d["toss_winner"] == d["winner"]).astype(int)
+    venues = d["venue"].value_counts().head(top).index.tolist()
+    rows = []
+    for v in venues:
+        g = d[d["venue"] == v]
+        cells = {}
+        for dec in ("bat", "field"):
+            s = g[g["toss_decision"].str.lower() == dec]
+            cells[dec] = {"pct": round(float(s["toss_win_match"].mean()), 3)
+                          if len(s) else None, "n": len(s)}
+        rows.append({"venue": v, "matches": len(g), **cells})
+    return {"venues": venues, "rows": rows}
+
+
 # React build (web/dist) takes precedence; legacy vanilla UI is the fallback.
 _STATIC = DIST if (DIST / "index.html").exists() else FRONTEND
 if _STATIC.exists():
