@@ -7,26 +7,27 @@ const PCAView = lazy(() => import("./PCAView"));
 const SUBS = [["pca", "PCA"], ["toss", "Toss Impact"], ["model", "Win Model"]];
 const darkInput = "w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white focus:border-[#D8FF02] focus:outline-none [&>option]:bg-[#0B1830]";
 
-export default function Analytics({ meta }) {
-  const [sub, setSub] = useState("pca");
+export default function Analytics({ meta, sub, setSub }) {
+  const cur = ["pca", "toss", "model"].includes(sub) ? sub : "pca";
+  const switchSub = (id) => setSub(id === "pca" ? "" : id);
   return (
     <>
       <div className="mb-4 flex gap-1.5">
         {SUBS.map(([id, label]) => (
-          <button key={id} onClick={() => setSub(id)}
+          <button key={id} onClick={() => switchSub(id)}
             className={`rounded-full px-4 py-2 text-[13px] font-medium transition ${
-              sub === id ? "bg-[#D8FF02] text-black" : "bg-white/10 text-white/70 hover:bg-white/15"}`}>
+              cur === id ? "bg-[#D8FF02] text-black" : "bg-white/10 text-white/70 hover:bg-white/15"}`}>
             {label}
           </button>
         ))}
       </div>
-      {sub === "pca" && (
+      {cur === "pca" && (
         <Suspense fallback={<p className="micro-label">Loading charts…</p>}>
           <PCAView />
         </Suspense>
       )}
-      {sub === "toss" && <TossImpact meta={meta} />}
-      {sub === "model" && <WinModel />}
+      {cur === "toss" && <TossImpact meta={meta} />}
+      {cur === "model" && <WinModel />}
     </>
   );
 }

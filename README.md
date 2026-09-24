@@ -41,13 +41,9 @@ FastAPI (api/main.py) → scikit-learn models + SQLite (ipl.db, built by src/tra
 
 ## Screenshots
 
-> Add 2–3 captures here (`screenshots/`):
-
-```
-screenshots/match-centre.png  # ratings + h2h + venue edge
-screenshots/live.png          # Live Predictor: e.g. 140/3 after 15, target 180
-screenshots/toss.png          # Toss Lab bat-first vs chase advice
-```
+| Overview | Live Predictor | Analytics (PCA) |
+|---|---|---|
+| ![Overview](screenshots/overview.png) | ![Live Predictor](screenshots/live.png) | ![Analytics](screenshots/analytics.png) |
 
 ## Demo
 

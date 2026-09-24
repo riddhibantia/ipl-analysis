@@ -38,7 +38,11 @@ function mockFetch(routes) {
 }
 
 function sidebarNav(container) {
-  return within(container.querySelector("aside"));
+  return within(container.querySelector("aside nav"));
+}
+
+function sidebarFooter(container) {
+  return within(container.querySelector("aside").querySelector("div.relative"));
 }
 
 beforeEach(() => {
@@ -50,13 +54,13 @@ describe("IPL Pulse shell", () => {
   it("renders exactly 8 sidebar nav items", async () => {
     const { container } = render(<App />);
     await waitFor(() => expect(screen.getByText("Season Pulse")).toBeInTheDocument());
-    expect(sidebarNav(container).getAllByRole("button")).toHaveLength(8 + 2); // nav + bell + settings
+    expect(sidebarNav(container).getAllByRole("button")).toHaveLength(8);
   });
 
   it("shows search, season picker and notifications bell", async () => {
     render(<App />);
     await waitFor(() => expect(screen.getByPlaceholderText("Search matches…")).toBeInTheDocument());
-    expect(screen.getByLabelText("Notifications, 3 unread")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Notifications/)).toBeInTheDocument();
     expect(screen.getByLabelText("Search matches")).toBeInTheDocument();
   });
 
@@ -65,6 +69,44 @@ describe("IPL Pulse shell", () => {
     const { container } = render(<App />);
     await waitFor(() => expect(screen.getByText("Show leaderboard")).toBeInTheDocument());
     expect(sidebarNav(container).getByText("Players")).toHaveClass("bg-[#D8FF02]");
+  });
+});
+
+describe("Sidebar footer", () => {
+  it("opens notifications with live data", async () => {
+    mockFetch([
+      ["/api/overview", { ...OVERVIEW,
+        orange_cap: { batter: "V Kohli", runs: 675, sr: 157.0 },
+        purple_cap: { bowler: "J Bumrah", wickets: 30, econ: 7.1 } }],
+      ["/api/metrics", { test: { accuracy: 0.8, roc_auc: 0.67 } }],
+      ...BASE_ROUTES,
+    ]);
+    const { container } = render(<App />);
+    await waitFor(() => expect(screen.getByText("Season Pulse")).toBeInTheDocument());
+    fireEvent.click(sidebarFooter(container).getByLabelText(/Notifications/));
+    await waitFor(() => expect(screen.getByText(/Orange Cap: V Kohli/)).toBeInTheDocument());
+    expect(screen.getByText(/Toss model holdout/)).toBeInTheDocument();
+  });
+
+  it("opens settings, toggles motion and persists", async () => {
+    const { container } = render(<App />);
+    await waitFor(() => expect(screen.getByText("Season Pulse")).toBeInTheDocument());
+    fireEvent.click(sidebarFooter(container).getByLabelText("Settings"));
+    const toggle = screen.getByText("Reduce motion");
+    fireEvent.click(toggle);
+    expect(document.documentElement.classList.contains("reduce-motion")).toBe(true);
+    expect(localStorage.getItem("ipl-reduced-motion")).toBe("1");
+    fireEvent.click(toggle);
+    expect(document.documentElement.classList.contains("reduce-motion")).toBe(false);
+  });
+
+  it("opens the profile card with repo link", async () => {
+    const { container } = render(<App />);
+    await waitFor(() => expect(screen.getByText("Season Pulse")).toBeInTheDocument());
+    fireEvent.click(sidebarFooter(container).getByLabelText("Profile"));
+    expect(screen.getByText("Riddhi Bantia")).toBeInTheDocument();
+    const link = screen.getByText("Open GitHub repo");
+    expect(link.getAttribute("href")).toContain("github.com/riddhibantia/ipl-analysis");
   });
 });
 

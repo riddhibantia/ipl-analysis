@@ -29,8 +29,8 @@ export default function PCAView() {
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
               <CartesianGrid stroke="rgba(255,255,255,0.08)" />
-              <XAxis dataKey="x" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} />
-              <YAxis dataKey="y" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} />
+              <XAxis dataKey="x" type="number" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }} tickFormatter={(v) => Number(v).toFixed(1)} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} />
+              <YAxis dataKey="y" type="number" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }} tickFormatter={(v) => Number(v).toFixed(1)} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} />
               <Tooltip cursor={{ stroke: "rgba(255,255,255,0.2)" }}
                 content={({ active, payload }) => active && payload?.length ? (
                   <div className="rounded-xl border border-white/15 bg-black/90 px-3 py-2 text-xs">

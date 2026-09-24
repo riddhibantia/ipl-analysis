@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from "react";
+import { MotionConfig } from "framer-motion";
 import { api } from "./api";
 import { ChartErrorBoundary } from "./ui";
 import { Logomark } from "./ui";
@@ -26,12 +27,16 @@ const NAV = [
 const MOBILE_TABS = ["overview", "matches", "teams", "players", "analytics", "insights"];
 
 const NAV_IDS = ["overview", "matches", "teams", "players", "venues", "analytics", "rankings", "insights"];
+// pre-redesign deep links keep working by mapping to their new homes
+const LEGACY_TABS = { live: "matches", centre: "matches", toss: "analytics", model: "analytics" };
 
 function readHash() {
   const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-  const tab = h.get("tab");
+  let tab = h.get("tab");
+  if (LEGACY_TABS[tab]) tab = LEGACY_TABS[tab];
   return {
     tab: NAV_IDS.includes(tab) ? tab : "overview",
+    sub: h.get("sub") || "",
     season: h.get("season") || "",
     q: h.get("q") || "",
   };
@@ -40,12 +45,17 @@ function readHash() {
 export default function App() {
   const initial = readHash();
   const [tab, setTab] = useState(initial.tab);
+  const [sub, setSub] = useState(initial.sub);
   const [meta, setMeta] = useState(null);
   const [ratings, setRatings] = useState([]);
   const [venues, setVenues] = useState([]);
   const [season, setSeason] = useState(initial.season);
   const [query, setQuery] = useState(initial.q);
   const [err, setErr] = useState(null);
+  const [panel, setPanel] = useState(null); // null | "bell" | "settings" | "profile"
+  const [feed, setFeed] = useState(null);
+  const [motionOff, setMotionOff] = useState(
+    () => localStorage.getItem("ipl-reduced-motion") === "1");
 
   useEffect(() => {
     Promise.all([api.meta(), api.ratings(), api.venues()])
@@ -58,17 +68,44 @@ export default function App() {
       .catch((e) => setErr(e.message));
   }, []);
 
-  // shareable URL state: #tab=&season=&q=
+  // shareable URL state: #tab=&sub=&season=&q=
   useEffect(() => {
     const h = new URLSearchParams();
     h.set("tab", tab);
+    if (sub) h.set("sub", sub);
     if (season) h.set("season", season);
     if (query) h.set("q", query);
     window.history.replaceState(null, "", `#${h.toString()}`);
-  }, [tab, season, query]);
+  }, [tab, sub, season, query]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("reduce-motion", motionOff);
+    localStorage.setItem("ipl-reduced-motion", motionOff ? "1" : "0");
+  }, [motionOff]);
+
+  function togglePanel(p) {
+    if (p === "bell" && !feed) {
+      Promise.all([
+        api.get("/api/overview").catch(() => null),
+        api.metrics().catch(() => null),
+      ]).then(([o, m]) => {
+        const items = [];
+        if (o) {
+          const last = o.seasons[o.seasons.length - 1];
+          items.push([`${last} season in the data`, `${o.matches.toLocaleString()} matches · ${o.seasons[0]}–${last}`]);
+          if (o.orange_cap) items.push([`Orange Cap: ${o.orange_cap.batter}`, `${o.orange_cap.runs} runs · SR ${o.orange_cap.sr}`]);
+          if (o.purple_cap) items.push([`Purple Cap: ${o.purple_cap.bowler}`, `${o.purple_cap.wickets} wickets · econ ${o.purple_cap.econ}`]);
+        }
+        if (m) items.push(["Toss model holdout", `${Math.round(m.test.accuracy * 100)}% accuracy · AUC ${m.test.roc_auc}`]);
+        setFeed(items);
+      });
+    }
+    setPanel((cur) => (cur === p ? null : p));
+  }
 
   function go(id) {
     setTab(id);
+    setSub("");
     window.scrollTo({ top: 0 });
   }
 
@@ -80,6 +117,7 @@ export default function App() {
   const title = (NAV.find(([id]) => id === tab) || [])[1] || "";
 
   return (
+    <MotionConfig reducedMotion={motionOff ? "always" : "never"}>
     <div className="min-h-screen text-white">
       <div className="mesh-bg" aria-hidden="true" />
       {/* ------- desktop sidebar: exactly 8 flat items, no scroll ------- */}
@@ -100,13 +138,31 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div className="mt-4 flex items-center gap-2.5 border-t border-white/10 px-2 pt-4">
-          <div className="relative">
-            <button aria-label="Notifications, 3 unread" className="text-lg">🔔</button>
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#D8FF02] text-[9px] font-semibold text-black">3</span>
+        <div className="relative mt-4 border-t border-white/10 px-2 pt-4">
+          {panel && (
+            <div className="glass absolute bottom-full left-0 right-0 mb-2 !rounded-2xl p-4 fade-in">
+              {panel === "bell" && <FeedPanel feed={feed} />}
+              {panel === "settings" && (
+                <SettingsPanel motionOff={motionOff} setMotionOff={setMotionOff}
+                  meta={meta} clearFilters={() => { setQuery(""); setPanel(null); }} />
+              )}
+              {panel === "profile" && <ProfilePanel meta={meta} />}
+            </div>
+          )}
+          <div className="flex items-center gap-2.5">
+            <div className="relative">
+              <button aria-label={`Notifications${feed ? `, ${feed.length} items` : ""}`}
+                onClick={() => togglePanel("bell")} className="text-lg">🔔</button>
+              {feed && feed.length > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#D8FF02] text-[9px] font-semibold text-black">
+                  {feed.length}
+                </span>
+              )}
+            </div>
+            <button aria-label="Settings" onClick={() => togglePanel("settings")} className="text-white/60 hover:text-white">⚙</button>
+            <button aria-label="Profile" onClick={() => togglePanel("profile")}
+              className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-[#88A1FF] text-xs font-semibold text-black">RB</button>
           </div>
-          <button aria-label="Settings" className="text-white/60">⚙</button>
-          <div className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-[#88A1FF] text-xs font-semibold text-black">RB</div>
         </div>
       </aside>
 
@@ -154,14 +210,14 @@ export default function App() {
           {meta && (
             <div key={tab} className="fade-in">
               {tab === "overview" && <Overview go={go} meta={meta} season={season} />}
-              {tab === "matches" && <Matches meta={meta} season={season} query={query} />}
+              {tab === "matches" && <Matches meta={meta} season={season} query={query} sub={sub} setSub={setSub} />}
               {tab === "teams" && <Teams meta={meta} ratings={ratings} />}
               {tab === "players" && <Players />}
               {tab === "venues" && <Tables venues={venues} />}
               {tab === "analytics" && (
                 <Suspense fallback={<p className="micro-label">Loading charts…</p>}>
                   <ChartErrorBoundary>
-                    <Analytics meta={meta} />
+                    <Analytics meta={meta} sub={sub} setSub={setSub} />
                   </ChartErrorBoundary>
                 </Suspense>
               )}
@@ -173,15 +229,74 @@ export default function App() {
       </div>
 
       {/* ------- mobile bottom bar ------- */}
-      <nav className="fixed inset-x-3 bottom-3 z-20 flex justify-around rounded-full border border-white/15 bg-black/90 px-2 py-2 backdrop-blur-xl md:hidden">
+      <nav className="fixed inset-x-3 bottom-3 z-20 flex justify-around rounded-full border border-white/15 bg-black/90 px-2 py-2 backdrop-blur-xl md:hidden" aria-label="Primary">
         {NAV.filter(([id]) => MOBILE_TABS.includes(id)).map(([id, label, icon]) => (
-          <button key={id} onClick={() => go(id)}
+          <button key={id} onClick={() => go(id)} aria-label={label}
             className={`flex h-10 w-10 items-center justify-center rounded-full text-base ${
               tab === id ? "bg-[#D8FF02] text-black" : "text-white/60"}`} title={label}>
             {icon}
           </button>
         ))}
       </nav>
+    </div>
+    </MotionConfig>
+  );
+}
+
+function FeedPanel({ feed }) {
+  if (!feed) return <p className="micro-label">Loading updates…</p>;
+  if (!feed.length) return <p className="micro-label">No data yet.</p>;
+  return (
+    <div>
+      <p className="micro-label mb-2">Updates · live from the data</p>
+      {feed.map(([t, s]) => (
+        <div key={t} className="border-b border-white/10 py-2 last:border-0">
+          <div className="text-[13px] font-semibold">{t}</div>
+          <div className="tnum text-xs text-white/50">{s}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SettingsPanel({ motionOff, setMotionOff, meta, clearFilters }) {
+  return (
+    <div>
+      <p className="micro-label mb-2">Settings</p>
+      <button onClick={() => setMotionOff(!motionOff)} aria-pressed={motionOff}
+        className="flex w-full items-center justify-between py-2 text-left text-[13px] font-medium">
+        Reduce motion
+        <span className={`relative h-5 w-9 rounded-full transition ${motionOff ? "bg-[#D8FF02]" : "bg-white/15"}`}>
+          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${motionOff ? "left-[18px]" : "left-0.5"}`} />
+        </span>
+      </button>
+      <button onClick={clearFilters} className="w-full py-2 text-left text-[13px] font-medium text-white/70 hover:text-white">
+        Reset search filters
+      </button>
+      <p className="micro-label mt-2 !normal-case">
+        {meta ? `${meta.seasons[0]}–${meta.seasons[meta.seasons.length - 1]} · ${meta.teams.length} teams` : "IPL Pulse"}
+      </p>
+    </div>
+  );
+}
+
+function ProfilePanel({ meta }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2.5">
+        <Logomark size={34} />
+        <div>
+          <div className="text-[13px] font-semibold">Riddhi Bantia</div>
+          <div className="micro-label !text-[10px]">maintainer · @riddhibantia</div>
+        </div>
+      </div>
+      <a href="https://github.com/riddhibantia/ipl-analysis" target="_blank" rel="noreferrer"
+        className="mt-3 block rounded-full bg-[#D8FF02] py-2 text-center text-[13px] font-semibold text-black">
+        Open GitHub repo
+      </a>
+      <p className="micro-label mt-2 !normal-case">
+        {meta ? `Serving ${meta.seasons[0]}–${meta.seasons[meta.seasons.length - 1]} data` : "IPL Pulse"}
+      </p>
     </div>
   );
 }

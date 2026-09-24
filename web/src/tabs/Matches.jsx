@@ -6,18 +6,19 @@ import MatchCentre from "./MatchCentre";
 
 const SUBS = [["results", "Results"], ["centre", "Match Centre"], ["live", "Live Predictor"]];
 
-export default function Matches({ meta, season, query }) {
-  const [sub, setSub] = useState("results");
+export default function Matches({ meta, season, query, sub, setSub }) {
   const [team, setTeam] = useState("");
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const LIMIT = 25;
+  const cur = ["results", "centre", "live"].includes(sub) ? sub : "results";
+  const switchSub = (id) => { setSub(id === "results" ? "" : id); };
 
   useEffect(() => { setOffset(0); }, [season, team, query]);
 
   useEffect(() => {
-    if (sub !== "results") return;
+    if (cur !== "results") return;
     const p = new URLSearchParams({ limit: LIMIT, offset });
     if (season) p.set("season", season);
     if (team) p.set("team", team);
@@ -34,16 +35,16 @@ export default function Matches({ meta, season, query }) {
     <>
       <div className="mb-4 flex gap-1.5">
         {SUBS.map(([id, label]) => (
-          <button key={id} onClick={() => setSub(id)}
+          <button key={id} onClick={() => switchSub(id)}
             className={`rounded-full px-4 py-2 text-[13px] font-medium transition ${
-              sub === id ? "bg-[#D8FF02] text-black" : "bg-white/10 text-white/70 hover:bg-white/15"}`}>
+              cur === id ? "bg-[#D8FF02] text-black" : "bg-white/10 text-white/70 hover:bg-white/15"}`}>
             {label}
           </button>
         ))}
       </div>
-      {sub === "centre" && <MatchCentre meta={meta} />}
-      {sub === "live" && <Live meta={meta} />}
-      {sub === "results" && (
+      {cur === "centre" && <MatchCentre meta={meta} />}
+      {cur === "live" && <Live meta={meta} />}
+      {cur === "results" && (
         <>
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <select value={team} onChange={(e) => setTeam(e.target.value)}
