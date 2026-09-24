@@ -39,12 +39,6 @@ FastAPI (api/main.py) → scikit-learn models + SQLite (ipl.db, built by src/tra
 
 `web/dist/` is built (`npm run build`, served by FastAPI); `frontend/` is the legacy vanilla fallback if `dist/` is missing.
 
-## Screenshots
-
-| Overview | Live Predictor | Analytics (PCA) |
-|---|---|---|
-| ![Overview](screenshots/overview.png) | ![Live Predictor](screenshots/live.png) | ![Analytics](screenshots/analytics.png) |
-
 ## Demo
 
 ```bash

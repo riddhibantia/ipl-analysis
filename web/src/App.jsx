@@ -123,11 +123,14 @@ export default function App() {
       {/* ------- desktop sidebar: exactly 8 flat items, no scroll ------- */}
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-[220px] flex-col px-4 py-6 md:flex">
         <div className="mb-8 flex items-center gap-2.5 px-2">
-          <Logomark size={36} />
-          <div>
-            <div className="font-semibold tracking-tight">IPL Pulse</div>
-            <div className="micro-label !text-[10px]">analytics</div>
-          </div>
+          <button onClick={() => { setQuery(""); go("overview"); }} aria-label="IPL Pulse home"
+            className="flex items-center gap-2.5 rounded-xl" title="Home">
+            <Logomark size={36} />
+            <span className="text-left">
+              <span className="block font-semibold tracking-tight">IPL Pulse</span>
+              <span className="micro-label block !text-[10px]">analytics</span>
+            </span>
+          </button>
         </div>
         <nav className="flex-1 space-y-1">
           {NAV.map(([id, label, icon]) => (

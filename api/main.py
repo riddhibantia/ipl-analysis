@@ -402,5 +402,19 @@ def toss_heatmap(top: int = Query(8, le=20)):
 
 # React build (web/dist) takes precedence; legacy vanilla UI is the fallback.
 _STATIC = DIST if (DIST / "index.html").exists() else FRONTEND
+
+
+@app.get("/", include_in_schema=False)
+def index_no_cache():
+    # Never cache the shell: guarantees users get the newest bundle,
+    # while hashed assets (immutable) stay cached by the browser.
+    if _STATIC.exists():
+        return FileResponse(
+            _STATIC / "index.html",
+            headers={"Cache-Control": "no-store, must-revalidate"},
+        )
+    raise HTTPException(404, "no frontend built")
+
+
 if _STATIC.exists():
     app.mount("/", StaticFiles(directory=_STATIC, html=True), name="frontend")
