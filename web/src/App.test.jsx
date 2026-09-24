@@ -121,6 +121,11 @@ describe("Sidebar footer", () => {
 
   it("opens a deep-linked live predictor via hash sub", async () => {
     window.location.hash = "#tab=matches&sub=live";
+    mockFetch([
+      ["/api/live-curve", { curve: [{ over: 5, inn1: 0.6, inn2: 0.7 }],
+        summary: { innings_1: { test_accuracy: 0.64 }, innings_2: { test_accuracy: 0.82 } } }],
+      ...BASE_ROUTES,
+    ]);
     render(<App />);
     await waitFor(() => expect(screen.getByText("Live Win Predictor")).toBeInTheDocument());
     expect(screen.getByText("Tense finish")).toBeInTheDocument();

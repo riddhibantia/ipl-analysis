@@ -180,7 +180,10 @@ function LiveResult({ d }) {
 }
 
 function Curve({ c }) {
+  if (!c || !Array.isArray(c.curve)) return <p className="micro-label">No data yet.</p>;
   const step = c.curve.filter((_, i) => i % 2 === 0);
+  const a1 = c.summary?.innings_1?.test_accuracy;
+  const a2 = c.summary?.innings_2?.test_accuracy;
   return (
     <>
       <div className="mt-2 flex items-end gap-[3px]">
@@ -195,8 +198,8 @@ function Curve({ c }) {
         ))}
       </div>
       <div className="mt-2 flex flex-wrap gap-4 text-xs text-white/50">
-        <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded bg-[#D8FF02]" />1st innings (test acc {Math.round(c.summary.innings_1.test_accuracy * 100)}%)</span>
-        <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded bg-[#88A1FF]" />chase (test acc {Math.round(c.summary.innings_2.test_accuracy * 100)}%)</span>
+        <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded bg-[#D8FF02]" />1st innings{a1 ? ` (test acc ${Math.round(a1 * 100)}%)` : ""}</span>
+        <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded bg-[#88A1FF]" />chase{a2 ? ` (test acc ${Math.round(a2 * 100)}%)` : ""}</span>
       </div>
     </>
   );
