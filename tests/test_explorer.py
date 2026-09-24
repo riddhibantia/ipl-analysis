@@ -47,3 +47,17 @@ def test_toss_heatmap():
     row = h["rows"][0]
     assert row["bat"]["n"] + row["field"]["n"] == row["matches"]
     assert 0 <= (row["bat"]["pct"] or 0.5) <= 1
+
+
+def test_season_counts():
+    rows = client.get("/api/seasons/counts").json()
+    assert rows[0]["season"] == 2007
+    assert rows[-1]["season"] >= 2025
+    assert sum(r["matches"] for r in rows) >= 1200
+
+
+def test_history_this_week():
+    h = client.get("/api/history/this-week").json()
+    assert 1 <= h["week"] <= 53
+    assert "won by" in h["featured"]["result"]
+    assert len(h["rows"]) >= 1

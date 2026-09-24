@@ -445,6 +445,53 @@ def toss_heatmap(top: int = Query(8, le=20)):
     return {"venues": venues, "rows": rows}
 
 
+@app.get("/api/seasons/counts")
+def season_counts():
+    df = matches()
+    g = df.groupby("season_year").size().reset_index(name="matches")
+    balls = {}
+    if (ROOT / "data" / "deliveries.csv").exists():
+        dd = deliveries()[["match_id"]].copy()
+        dd["season"] = dd["match_id"].map(
+            df.set_index("id")["season_year"].to_dict())
+        balls = dd.groupby("season").size().to_dict()
+    return [{"season": int(r["season_year"]), "matches": int(r["matches"]),
+             "balls": int(balls.get(r["season_year"], 0))}
+            for _, r in g.sort_values("season_year").iterrows()]
+
+
+@app.get("/api/history/this-week")
+def history_this_week():
+    """Notable matches played in the current calendar week across seasons."""
+    import datetime
+    df = matches()
+    d = df[df["decided"]].copy()
+    today = datetime.date.today()
+    _, week, _ = today.isocalendar()
+    d["week"] = pd.to_datetime(d["date"]).dt.isocalendar().week.astype(int)
+    same = d[d["week"] == week].copy()
+    if not len(same):
+        same = d
+    same["margin_n"] = same["result_margin"].fillna(0)
+    feat = same.sort_values("margin_n", ascending=False).iloc[0]
+    rows = []
+    for _, r in same.sort_values("date", ascending=False).head(6).iterrows():
+        rows.append({"id": int(r["id"]), "season": int(r["season_year"]),
+                     "date": str(r["date"].date()),
+                     "team1": r["team1"], "team2": r["team2"],
+                     "headline": (f"{r['team1'].split()[-1]} vs {r['team2'].split()[-1]}"),
+                     "result": (f"{r['winner']} won by {r['result_margin']} {r['result']}"
+                                if pd.notna(r["winner"]) else r["result"]),
+                     "venue": r["venue"]})
+    return {"week": int(week),
+            "featured": {"id": int(feat["id"]), "season": int(feat["season_year"]),
+                         "date": str(feat["date"].date()),
+                         "team1": feat["team1"], "team2": feat["team2"],
+                         "result": (f"{feat['winner']} won by {feat['result_margin']} {feat['result']}"),
+                         "venue": feat["venue"]},
+            "rows": rows}
+
+
 # React build (web/dist) takes precedence; legacy vanilla UI is the fallback.
 _STATIC = DIST if (DIST / "index.html").exists() else FRONTEND
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import { TeamBadge, pct1 } from "../ui";
+import { PopoverBadge, pct1 } from "../ui";
 
 export default function Rankings({ meta, season }) {
   const [rows, setRows] = useState([]);
@@ -19,7 +19,7 @@ export default function Rankings({ meta, season }) {
             <span className={`tnum w-7 text-lg font-semibold ${i === 0 ? "text-[#D8FF02]" : "text-white/50"}`}>
               {String(i + 1).padStart(2, "0")}
             </span>
-            <TeamBadge team={r} size={38} />
+            <PopoverBadge team={r} size={38} />
             <div className="min-w-0 flex-1">
               <div className="flex justify-between text-sm">
                 <b className="truncate">{r.team}</b>

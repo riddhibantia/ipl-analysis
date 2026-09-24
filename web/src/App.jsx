@@ -2,7 +2,9 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { MotionConfig } from "framer-motion";
 import { api } from "./api";
 import { ChartErrorBoundary } from "./ui";
+import { DiscoveryStrip } from "./ui";
 import { Logomark } from "./ui";
+import Palette from "./Palette";
 import Insights from "./tabs/Insights";
 import Matches from "./tabs/Matches";
 import Overview from "./tabs/Overview";
@@ -53,6 +55,9 @@ export default function App() {
   const [query, setQuery] = useState(initial.q);
   const [err, setErr] = useState(null);
   const [panel, setPanel] = useState(null); // null | "bell" | "settings" | "profile"
+  const [palette, setPalette] = useState(false);
+  const [teamFocus, setTeamFocus] = useState("");
+  const [playerFocus, setPlayerFocus] = useState("");
   const [feed, setFeed] = useState(null);
   const [motionOff, setMotionOff] = useState(
     () => localStorage.getItem("ipl-reduced-motion") === "1");
@@ -110,9 +115,33 @@ export default function App() {
     setPanel((cur) => (cur === p ? null : p));
   }
 
-  function go(id) {
+  // global command palette: Ctrl/⌘+K toggle, Esc close
+  useEffect(() => {
+    function onKey(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPalette((p) => !p);
+      }
+      if (e.key === "Escape") {
+        setPalette(false);
+        setPanel(null);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  function paletteNav(tab, sub = "", focus = {}) {
+    if (focus.team) setTeamFocus(focus.team);
+    if (focus.player) setPlayerFocus(focus.player);
+    if (focus.q) setQuery(focus.q);
+    setPalette(false);
+    go(tab, sub);
+  }
+
+  function go(id, sub = "") {
     setTab(id);
-    setSub("");
+    setSub(sub);
     window.scrollTo({ top: 0 });
   }
 
@@ -201,6 +230,8 @@ export default function App() {
             <form onSubmit={searchNow} className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 py-1.5 pl-4 pr-1.5">
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search matches…"
                 className="w-32 bg-transparent text-sm outline-none placeholder:text-white/40 sm:w-44" />
+              <button type="button" onClick={() => setPalette(true)} aria-label="Open command palette"
+                className="rounded-md bg-white/10 px-1.5 py-0.5 text-[11px] font-semibold text-white/60 hover:text-white">⌘K</button>
               <button aria-label="Search matches" className="flex h-8 w-8 items-center justify-center rounded-full bg-[#D8FF02] text-sm font-semibold text-black">⌕</button>
             </form>
           </div>
@@ -220,10 +251,11 @@ export default function App() {
           {!err && !meta && <p className="micro-label">Loading…</p>}
           {meta && (
             <div key={tab} className="fade-in">
+              <DiscoveryStrip go={go} />
               {tab === "overview" && <Overview go={go} meta={meta} season={season} />}
               {tab === "matches" && <Matches meta={meta} season={season} query={query} sub={sub} setSub={setSub} />}
-              {tab === "teams" && <Teams meta={meta} ratings={ratings} />}
-              {tab === "players" && <Players />}
+              {tab === "teams" && <Teams meta={meta} ratings={ratings} focus={teamFocus} />}
+              {tab === "players" && <Players focusQ={playerFocus} />}
               {tab === "venues" && <Tables venues={venues} />}
               {tab === "analytics" && (
                 <Suspense fallback={<p className="micro-label">Loading charts…</p>}>
@@ -239,8 +271,11 @@ export default function App() {
         </main>
       </div>
 
-      {/* ------- mobile bottom bar ------- */}
-      <nav className="fixed inset-x-3 bottom-3 z-20 flex justify-around rounded-full border border-white/15 bg-black/90 px-2 py-2 backdrop-blur-xl md:hidden" aria-label="Primary">
+      {palette && meta && (
+        <Palette meta={meta} onNav={paletteNav} onClose={() => setPalette(false)} />
+      )}
+
+      {/* ------- mobile bottom bar ------- */}      <nav className="fixed inset-x-3 bottom-3 z-20 flex justify-around rounded-full border border-white/15 bg-black/90 px-2 py-2 backdrop-blur-xl md:hidden" aria-label="Primary">
         {NAV.filter(([id]) => MOBILE_TABS.includes(id)).map(([id, label, icon]) => (
           <button key={id} onClick={() => go(id)} aria-label={label}
             className={`flex h-10 w-10 items-center justify-center rounded-full text-base ${

@@ -4,7 +4,7 @@ import { Field, FormPills, Sparkline } from "../ui";
 
 const darkInput = "field-dark";
 
-export default function Players() {
+export default function Players({ focusQ }) {
   const [role, setRole] = useState("batting");
   const [era, setEra] = useState("recent");
   const [q, setQ] = useState("");
@@ -12,13 +12,25 @@ export default function Players() {
   const [ran, setRan] = useState(false);
   const [detail, setDetail] = useState(null);
 
-  async function run() {
+  useEffect(() => {
+    if (focusQ) {
+      setQ(focusQ);
+      runWith(focusQ);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusQ]);
+
+  async function runWith(query) {
     setRan(true);
     setDetail(null);
     const r = await api.get(
-      `/api/players?role=${role}&era=${era}&q=${encodeURIComponent(q)}&limit=100`
+      `/api/players?role=${role}&era=${era}&q=${encodeURIComponent(query)}&limit=100`
     );
     setRows(r.rows);
+  }
+
+  async function run() {
+    runWith(q);
   }
 
   async function openDetail(name) {

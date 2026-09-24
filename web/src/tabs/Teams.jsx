@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api";
-import { FormPills, KV, NoData, Skeleton, Sparkline, StaggerItem, TeamBadge, pct1 } from "../ui";
+import { FormPills, KV, NoData, Skeleton, StaggerItem, TeamBadge, pct1 } from "../ui";
 
-export default function Teams({ meta, ratings }) {
+export default function Teams({ meta, ratings, focus }) {
   const [sel, setSel] = useState(null);
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -28,6 +28,11 @@ export default function Teams({ meta, ratings }) {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (focus) show(focus);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus]);
 
   return (
     <>

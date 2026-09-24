@@ -25,6 +25,9 @@ const BASE_ROUTES = [
   ["/api/rankings", { rows: [] }],
   ["/api/analytics/toss-heatmap", { rows: [] }],
   ["/api/matchups/top", { rows: [] }],
+  ["/api/seasons/counts", [{ season: 2024, matches: 71, balls: 17000 }]],
+  ["/api/history/this-week", { week: 20, featured: null, rows: [] }],
+  ["/api/insights/toss", [{ toss_decision: "bat", n: 1, toss_winner_won_match: 0.5 }]],
 ];
 
 function mockFetch(routes) {
@@ -129,6 +132,30 @@ describe("Sidebar footer", () => {
     render(<App />);
     await waitFor(() => expect(screen.getByText("Live Win Predictor")).toBeInTheDocument());
     expect(screen.getByText("Tense finish")).toBeInTheDocument();
+  });
+});
+
+describe("Command palette", () => {
+  it("opens with Ctrl+K, shows quick actions, navigates on Enter", async () => {
+    const { container } = render(<App />);
+    await waitFor(() => expect(screen.getByText("Season Pulse")).toBeInTheDocument());
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    const dlg = await waitFor(() => screen.getByLabelText("Command palette"));
+    expect(within(dlg).getByText("Predict a Match")).toBeInTheDocument();
+    fireEvent.keyDown(within(dlg).getByLabelText("Search everything"), { key: "Enter" });
+    await waitFor(() => expect(screen.getByText("Live Win Predictor")).toBeInTheDocument());
+  });
+
+  it("finds teams and closes on Escape", async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getByText("Season Pulse")).toBeInTheDocument());
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    const dlg = await waitFor(() => screen.getByLabelText("Command palette"));
+    const input = within(dlg).getByLabelText("Search everything");
+    fireEvent.change(input, { target: { value: "chennai" } });
+    await waitFor(() => expect(within(dlg).getByText("Chennai Super Kings")).toBeInTheDocument());
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByLabelText("Command palette")).not.toBeInTheDocument());
   });
 });
 

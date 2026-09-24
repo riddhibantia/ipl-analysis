@@ -11,7 +11,8 @@
 **What this is:** a dark, Courtix-style analytics dashboard for the Indian Premier League —
 1,243 matches and 295,718 balls (2008–2026). Open it and you get:
 
-- **Overview** — season-pulse hero, head-to-head explorer, toss heatmap, season record
+- **Overview** — season-pulse hero, live results ticker, head-to-head explorer, toss gauge,
+  form ticker, this-week-in-history, PCA teaser (bento grid)
 - **Matches** — searchable results explorer (season / team / text), each row expands into a
   **replay**: Manhattan, worm and win-probability charts from the real ball data
 - **Match Centre** — Elo ratings, head-to-head, form, venue edge, toss call, **AI preview**
@@ -25,7 +26,8 @@
 - **Model** — methodology, metrics, full API reference
 
 Stack: React + Vite + Tailwind + Recharts + Framer Motion served by FastAPI; scikit-learn models;
-official IPL team logos. Dark glass UI with a light-theme toggle; shareable `#tab=&sub=&season=&q=` links.
+official IPL team logos. Dark glass UI with light-theme toggle, ⌘K command palette,
+shareable `#tab=&sub=&season=&q=` links.
 
 ## Architecture
 

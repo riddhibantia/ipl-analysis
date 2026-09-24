@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import { StaggerItem, TeamBadge, brandOf } from "../ui";import Live from "./Live";
+import { PopoverBadge, PulseDot, StaggerItem, brandOf } from "../ui";import Live from "./Live";
 import MatchCentre from "./MatchCentre";
 
-const SUBS = [["results", "Results"], ["centre", "Match Centre"], ["live", "Live Predictor"]];
+const SUBS = [["results", "Results", false], ["centre", "Match Centre", false], ["live", "Live Predictor", true]];
 
 export default function Matches({ meta, season, query, sub, setSub }) {
   const [team, setTeam] = useState("");
@@ -51,11 +51,11 @@ export default function Matches({ meta, season, query, sub, setSub }) {
   return (
     <>
       <div className="mb-4 flex gap-1.5">
-        {SUBS.map(([id, label]) => (
+        {SUBS.map(([id, label, live]) => (
           <button key={id} onClick={() => switchSub(id)}
-            className={`rounded-full px-4 py-2 text-[13px] font-medium transition ${
+            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition ${
               cur === id ? "bg-[#D8FF02] text-black" : "bg-white/10 text-white/70 hover:bg-white/15"}`}>
-            {label}
+            {live && <PulseDot />}{label}
           </button>
         ))}
       </div>
@@ -83,7 +83,7 @@ export default function Matches({ meta, season, query, sub, setSub }) {
                   <button onClick={() => toggleTimeline(m.id)} aria-expanded={expanded === m.id}
                     aria-label={`Replay ${m.team1.short} vs ${m.team2.short}`}
                     className="flex w-full items-center gap-3 text-left">
-                    <TeamBadge team={m.team1} size={38} />
+                    <PopoverBadge team={m.team1} size={38} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">
                         {m.team1.short} <span className="text-white/40">vs</span> {m.team2.short}
@@ -95,7 +95,7 @@ export default function Matches({ meta, season, query, sub, setSub }) {
                       m.winner ? "bg-[#D8FF02] text-black" : "bg-white/15 text-white/70"}`}>
                       {m.winner ? m.result.replace(m.winner, shortOf(m.winner, m)) : m.result}
                     </span>
-                    <TeamBadge team={m.team2} size={38} />
+                    <PopoverBadge team={m.team2} size={38} />
                     <span className="text-white/40">{expanded === m.id ? "▾" : "▸"}</span>
                   </button>
                   {expanded === m.id && (

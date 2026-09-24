@@ -1,5 +1,5 @@
 /* IPL Pulse material primitives. Dark glass only. No ad-hoc team <img> outside TeamBadge. */
-import { Component, useEffect, useRef } from "react";
+import { Component, useEffect, useRef, useState } from "react";
 import { animate, motion } from "framer-motion";
 
 /** Error boundary: a bad data point must not blank the page (charts). */
@@ -250,3 +250,116 @@ export function KV({ k, v }) {
 }
 
 export const pct1 = (x) => (x == null ? null : `${Math.round(x * 100)}%`);
+
+/** Radial gauge: lime arc vs periwinkle arc, percentage centered. */
+export function Gauge({ limePct, size = 120, label }) {
+  const v = Math.max(0, Math.min(100, limePct ?? 0));
+  const r = 46, c = 2 * Math.PI * r;
+  const missing = limePct == null;
+  return (
+    <div className="flex flex-col items-center">
+      <svg width={size} height={size} viewBox="0 0 120 120" role="img" aria-label={label || "Gauge"}>
+        <circle cx="60" cy="60" r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="11" />
+        {!missing && (
+          <>
+            <circle cx="60" cy="60" r={r} fill="none" stroke="#88A1FF" strokeWidth="11"
+              strokeDasharray={`${c} 0`} transform="rotate(90 60 60)" opacity="0.85" />
+            <motion.circle cx="60" cy="60" r={r} fill="none" stroke="#D8FF02" strokeWidth="11"
+              strokeLinecap="round" strokeDasharray={`${(v / 100) * c} ${c}`}
+              transform="rotate(-90 60 60)" />
+          </>
+        )}
+        <text x="60" y="58" textAnchor="middle" fill="#fff" fontSize="22" fontWeight="600" className="tnum">
+          {missing ? "–" : `${Math.round(v)}%`}
+        </text>
+        {label && <text x="60" y="76" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="10">{label}</text>}
+      </svg>
+    </div>
+  );
+}
+
+let _ratingsCache = null;
+async function ratingsCache() {
+  if (!_ratingsCache) {
+    const r = await fetch("/api/ratings").then((x) => x.json()).catch(() => []);
+    _ratingsCache = Array.isArray(r) ? r : [];
+  }
+  return _ratingsCache;
+}
+const _formCache = {};
+async function formCache(name) {
+  if (!_formCache[name]) {
+    const r = await fetch(`/api/insights/form?team=${encodeURIComponent(name)}&n=5`)
+      .then((x) => x.json()).catch(() => ({ recent: [] }));
+    _formCache[name] = (r.recent || []).map((x) => x.winner === name);
+  }
+  return _formCache[name];
+}
+
+/** TeamBadge + hover glass popover (crest, Elo, last-5 dots). No navigation. */
+export function PopoverBadge({ team, size = 38 }) {
+  const [info, setInfo] = useState(null);
+  const [open, setOpen] = useState(false);
+  async function show() {
+    setOpen(true);
+    if (!info) {
+      const [ratings, form] = await Promise.all([ratingsCache(), formCache(team.name)]);
+      const r = ratings.find((x) => x.name === team.name) || {};
+      setInfo({ elo: r.elo, form });
+    }
+  }
+  return (
+    <span className="relative inline-block" onMouseEnter={show} onMouseLeave={() => setOpen(false)}
+      onFocus={show} onBlur={() => setOpen(false)}>
+      <TeamBadge team={team} size={size} />
+      {open && (
+        <span className="glass absolute bottom-full left-1/2 z-30 mb-2 w-44 -translate-x-1/2 !rounded-2xl p-3 text-left fade-in">
+          <span className="block text-[13px] font-semibold">{team.name}</span>
+          {info ? (
+            <>
+              <span className="tnum block text-xs text-white/60">Elo {info.elo ?? "–"}</span>
+              <span className="mt-1 block"><FormPills wins={info.form} /></span>
+            </>
+          ) : (
+            <span className="skeleton mt-1 block" style={{ width: 110, height: 16 }} />
+          )}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** Pulsing lime dot (marks interactive/live affordances). */
+export function PulseDot() {
+  return <span className="pulse-dot" aria-hidden="true" />;
+}
+
+const FEATURES = [
+  ["matches", "live", "🔮", "Predict a Match", "Instant win probability"],
+  ["matches", "centre", "⚔️", "Compare Teams", "Head-to-head, any pair"],
+  ["venues", "", "🗺️", "Explore Venues", "How grounds shape results"],
+  ["analytics", "", "🧠", "Analytics Lab", "PCA & win models"],
+  ["rankings", "", "🏆", "Rankings", "All-time standings"],
+  ["insights", "", "🎯", "Toss Insights", "Does winning the toss matter?"],
+];
+
+/** Feature-discovery strip: glass pill-cards routing to product features. */
+export function DiscoveryStrip({ go }) {
+  return (
+    <div className="relative mb-4">
+      <div className="tabs-scroll flex gap-2.5 overflow-x-auto pb-1">
+        {FEATURES.map(([tab, sub, icon, label, blurb]) => (
+          <button key={label}
+            onClick={() => go(tab, sub)}
+            className="glass glass-hover group w-[200px] flex-none !rounded-2xl p-3.5 text-left">
+            <span className="block text-xl transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6">{icon}</span>
+            <span className="mt-1 block text-sm font-semibold">{label}</span>
+            <span className="micro-label mt-0.5 block !normal-case">{blurb}</span>
+          </button>
+        ))}
+      </div>
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black to-transparent" />
+    </div>
+  );
+}

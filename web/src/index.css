@@ -103,6 +103,34 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   to { opacity: 1; }
 }
 
+/* Pulsing lime dot (2s loop) for live/interactive affordances. */
+.pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #d8ff02;
+  box-shadow: 0 0 10px rgba(216, 255, 2, 0.8);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+/* Marquee results ticker (pauses on hover). */
+.ticker {
+  display: flex;
+  gap: 8px;
+  width: max-content;
+  animation: ticker-scroll 36s linear infinite;
+}
+.ticker-wrap:hover .ticker { animation-play-state: paused; }
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
 /* Reduce-motion kill switch (settings toggle). */
 .reduce-motion *, .reduce-motion *::before, .reduce-motion *::after {
   animation-duration: 0.01ms !important;
