@@ -1,5 +1,7 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { api } from "./api";
+import { ChartErrorBoundary } from "./ui";
+import { Logomark } from "./ui";
 import Insights from "./tabs/Insights";
 import Matches from "./tabs/Matches";
 import Overview from "./tabs/Overview";
@@ -23,13 +25,26 @@ const NAV = [
 
 const MOBILE_TABS = ["overview", "matches", "teams", "players", "analytics", "insights"];
 
+const NAV_IDS = ["overview", "matches", "teams", "players", "venues", "analytics", "rankings", "insights"];
+
+function readHash() {
+  const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const tab = h.get("tab");
+  return {
+    tab: NAV_IDS.includes(tab) ? tab : "overview",
+    season: h.get("season") || "",
+    q: h.get("q") || "",
+  };
+}
+
 export default function App() {
-  const [tab, setTab] = useState("overview");
+  const initial = readHash();
+  const [tab, setTab] = useState(initial.tab);
   const [meta, setMeta] = useState(null);
   const [ratings, setRatings] = useState([]);
   const [venues, setVenues] = useState([]);
-  const [season, setSeason] = useState("");
-  const [query, setQuery] = useState("");
+  const [season, setSeason] = useState(initial.season);
+  const [query, setQuery] = useState(initial.q);
   const [err, setErr] = useState(null);
 
   useEffect(() => {
@@ -38,10 +53,19 @@ export default function App() {
         setMeta(m);
         setRatings(r);
         setVenues(v);
-        setSeason(String(m.seasons[m.seasons.length - 1]));
+        if (!readHash().season) setSeason(String(m.seasons[m.seasons.length - 1]));
       })
       .catch((e) => setErr(e.message));
   }, []);
+
+  // shareable URL state: #tab=&season=&q=
+  useEffect(() => {
+    const h = new URLSearchParams();
+    h.set("tab", tab);
+    if (season) h.set("season", season);
+    if (query) h.set("q", query);
+    window.history.replaceState(null, "", `#${h.toString()}`);
+  }, [tab, season, query]);
 
   function go(id) {
     setTab(id);
@@ -57,13 +81,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen text-white">
+      <div className="mesh-bg" aria-hidden="true" />
       {/* ------- desktop sidebar: exactly 8 flat items, no scroll ------- */}
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-[220px] flex-col px-4 py-6 md:flex">
         <div className="mb-8 flex items-center gap-2.5 px-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-semibold text-red-900"
-            style={{ background: "radial-gradient(circle at 35% 32%, #ffffff, #ffd9d9 42%, #e02424 78%)" }}>
-            IPL
-          </div>
+          <Logomark size={36} />
           <div>
             <div className="font-semibold tracking-tight">IPL Pulse</div>
             <div className="micro-label !text-[10px]">analytics</div>
@@ -80,10 +102,10 @@ export default function App() {
         </nav>
         <div className="mt-4 flex items-center gap-2.5 border-t border-white/10 px-2 pt-4">
           <div className="relative">
-            <span className="text-lg">🔔</span>
+            <button aria-label="Notifications, 3 unread" className="text-lg">🔔</button>
             <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#D8FF02] text-[9px] font-semibold text-black">3</span>
           </div>
-          <span className="text-white/60">⚙</span>
+          <button aria-label="Settings" className="text-white/60">⚙</button>
           <div className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-[#88A1FF] text-xs font-semibold text-black">RB</div>
         </div>
       </aside>
@@ -112,7 +134,7 @@ export default function App() {
             <form onSubmit={searchNow} className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 py-1.5 pl-4 pr-1.5">
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search matches…"
                 className="w-32 bg-transparent text-sm outline-none placeholder:text-white/40 sm:w-44" />
-              <button className="flex h-8 w-8 items-center justify-center rounded-full bg-[#D8FF02] text-sm font-semibold text-black">⌕</button>
+              <button aria-label="Search matches" className="flex h-8 w-8 items-center justify-center rounded-full bg-[#D8FF02] text-sm font-semibold text-black">⌕</button>
             </form>
           </div>
           <nav className="tabs-scroll flex gap-1.5 overflow-x-auto px-4 pb-3 md:hidden">
@@ -138,7 +160,9 @@ export default function App() {
               {tab === "venues" && <Tables venues={venues} />}
               {tab === "analytics" && (
                 <Suspense fallback={<p className="micro-label">Loading charts…</p>}>
-                  <Analytics meta={meta} />
+                  <ChartErrorBoundary>
+                    <Analytics meta={meta} />
+                  </ChartErrorBoundary>
                 </Suspense>
               )}
               {tab === "rankings" && <Rankings meta={meta} season={season} />}

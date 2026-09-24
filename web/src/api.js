@@ -1,10 +1,13 @@
-async function getJSON(url, opts) {
-  const r = await fetch(url, opts);
+const BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
+async function getJSON(path, opts) {
+  const r = await fetch(`${BASE}${path}`, opts);
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
 
 export const api = {
+  get: (path) => getJSON(path),
   meta: () => getJSON("/api/meta"),
   ratings: () => getJSON("/api/ratings"),
   venues: () => getJSON("/api/venues"),

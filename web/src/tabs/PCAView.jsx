@@ -1,10 +1,11 @@
 import { Fragment, useEffect, useState } from "react";
 import { CartesianGrid, Cell, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
+import { api } from "../api";
 
 export default function PCAView() {
   const [pca, setPca] = useState(null);
   useEffect(() => {
-    fetch("/api/analytics/pca").then((r) => r.json()).then(setPca).catch(() => {});
+    api.get("/api/analytics/pca").then(setPca).catch(() => {});
   }, []);
   if (!pca) return <p className="micro-label">Loading PCA…</p>;
   const won = pca.points.filter((p) => p.team1_win === 1);

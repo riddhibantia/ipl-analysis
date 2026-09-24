@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { TeamBadge, brandOf } from "../ui";
+import { api } from "../api";
+import { StaggerItem, TeamBadge, brandOf } from "../ui";
 import Live from "./Live";
 import MatchCentre from "./MatchCentre";
 
@@ -21,7 +22,7 @@ export default function Matches({ meta, season, query }) {
     if (season) p.set("season", season);
     if (team) p.set("team", team);
     if (query) p.set("q", query);
-    fetch(`/api/matches?${p}`).then((r) => r.json()).then((m) => {
+    api.get(`/api/matches?${p}`).then((m) => {
       setRows(offset === 0 ? m.rows : (prev) => [...prev, ...m.rows]);
       setTotal(m.total);
     }).catch(() => {});
@@ -53,11 +54,12 @@ export default function Matches({ meta, season, query }) {
             <span className="micro-label">{total} matches{query ? ` · “${query}”` : ""}</span>
           </div>
           <div className="space-y-2">
-            {rows.map((m) => {
+            {rows.map((m, i) => {
               const w = [m.team1, m.team2].find((t) => t.name === m.winner);
               const wcolor = w ? brandOf(w) : "transparent";
               return (
-                <div key={m.id}
+                <StaggerItem key={m.id} index={i}>
+                <div
                   className="glass glass-hover flex items-center gap-3 p-3.5 pl-4"
                   style={{ borderLeft: `3px solid ${wcolor}` }}>
                   <TeamBadge team={m.team1} size={38} />
@@ -74,9 +76,16 @@ export default function Matches({ meta, season, query }) {
                   </span>
                   <TeamBadge team={m.team2} size={38} />
                 </div>
+                </StaggerItem>
               );
             })}
           </div>
+          {rows.length === 0 && (
+            <div className="glass mt-2 p-8 text-center">
+              <p className="font-semibold">No matches found</p>
+              <p className="micro-label mt-1 normal-case">Try a different season, team or search.</p>
+            </div>
+          )}
           {rows.length < total && (
             <button onClick={() => setOffset(offset + LIMIT)}
               className="mt-4 w-full rounded-full border border-white/15 bg-white/5 p-3 text-sm font-medium hover:border-white/30">

@@ -37,7 +37,7 @@ function TossImpact({ meta }) {
   const [data, setData] = useState(null);
   const [heat, setHeat] = useState(null);
   useEffect(() => {
-    fetch("/api/analytics/toss-heatmap?top=8").then((r) => r.json()).then(setHeat).catch(() => {});
+    api.get("/api/analytics/toss-heatmap?top=8").then(setHeat).catch(() => {});
   }, []);
 
   async function run() {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api } from "../api";
-import { FormPills, KV, NoData, Skeleton, TeamBadge, brandOf, pct1 } from "../ui";
+import { FormPills, KV, NoData, Skeleton, Sparkline, StaggerItem, TeamBadge, pct1 } from "../ui";
 
 export default function Teams({ meta, ratings }) {
   const [sel, setSel] = useState(null);
@@ -18,11 +18,12 @@ export default function Teams({ meta, ratings }) {
     setSel(name);
     setLoading(true);
     try {
-      const [f, p] = await Promise.all([
+      const [f, p, det] = await Promise.all([
         api.form(name),
-        fetch(`/api/teams/profile?name=${encodeURIComponent(name)}`).then((r) => r.json()),
+        api.get(`/api/teams/profile?name=${encodeURIComponent(name)}`),
+        api.get(`/api/teams/detail?name=${encodeURIComponent(name)}`),
       ]);
-      setDetail({ name, recent: f.recent, profile: p.profile });
+      setDetail({ name, recent: f.recent, profile: p.profile, extra: det });
     } finally {
       setLoading(false);
     }
@@ -39,18 +40,20 @@ export default function Teams({ meta, ratings }) {
             const w = r.elo ? Math.round(((r.elo - min) / Math.max(max - min, 1)) * 100) : 0;
             const top3 = i < 3;
             return (
-              <button key={t.name} onClick={() => show(t.name)}
-                className={`rounded-[20px] border bg-white/5 text-center transition hover:-translate-y-0.5 hover:border-white/25 ${
+              <StaggerItem key={t.name} index={i}>
+              <button onClick={() => show(t.name)}
+                className={`h-full w-full rounded-[20px] border bg-white/5 text-center transition hover:-translate-y-0.5 hover:border-white/25 ${
                   top3 ? "border-[#D8FF02]/50 p-5 shadow-[0_0_28px_rgba(216,255,2,0.12)]" : "border-white/10 p-4"
                 } ${sel === t.name ? "!border-[#D8FF02]" : ""}`}>
                 <TeamBadge team={t} size={top3 ? 68 : 60} />
                 <h4 className="mt-2 text-[13px] font-semibold">{t.short}</h4>
-                <div className="tnum text-xs text-white/50">Elo {r.elo || "–"}</div>
+                <div className="tnum text-xs text-white/50">Elo {r.elo ?? <NoData />}</div>
                 <div className="my-1.5 h-2 overflow-hidden rounded-full bg-white/10">
                   <div className="h-full rounded-full bg-[#D8FF02]" style={{ width: `${w}%` }} />
                 </div>
                 <div className="tnum text-xs text-white/50">{r.win_pct ? `${Math.round(r.win_pct * 100)}% wins` : ""}</div>
               </button>
+              </StaggerItem>
             );
           })}
         </div>
@@ -64,7 +67,7 @@ export default function Teams({ meta, ratings }) {
 const PHASE_LABEL = { powerplay: "Powerplay (0–5)", middle: "Middle (6–15)", death: "Death (16–19)" };
 
 function TeamDetail({ detail }) {
-  const { name, recent, profile: p } = detail;
+  const { name, recent, profile: p, extra } = detail;
   const pills = recent.map((r) => r.winner === name);
   const splits = [["Chase", p.chase_win_pct], ["Defence", p.defend_win_pct], ["Home", p.home_win_pct], ["Away", p.away_win_pct]];
   return (
@@ -121,6 +124,42 @@ function TeamDetail({ detail }) {
         <KV k="2025–26 batting" v={`SR ${p.recent.bat.sr} · avg ${p.recent.bat.avg}`} />
         <KV k="2025–26 bowling" v={`econ ${p.recent.bowl.econ}`} />
       </div>
+
+      {extra && (
+        <>
+          <div className="glass mt-4 p-5 sm:p-6">
+            <h3 className="micro-label mb-3">Win% trend by season</h3>
+            <Sparkline values={extra.trend.map((t) => t.win_pct * 100)}
+              labels={extra.trend.map((t) => `${t.season} (${t.wins}/${t.played})`)} />
+            <div className="micro-label mt-1 flex justify-between">
+              <span>{extra.trend[0]?.season}</span>
+              <span>{extra.trend[extra.trend.length - 1]?.season}</span>
+            </div>
+          </div>
+
+          <div className="glass mt-4 p-5 sm:p-6">
+            <h3 className="micro-label mb-3">Head-to-head vs every team</h3>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {extra.h2h_grid.map((g) => (
+                <div key={g.opponent} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-2.5">
+                  <TeamBadge team={g} size={32} />
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold">{g.short}</div>
+                    <div className="tnum text-xs text-white/50">{g.wins}–{g.played - g.wins}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="glass mt-4 p-5 sm:p-6">
+            <h3 className="micro-label mb-3">Player-of-the-match frequency</h3>
+            {extra.potm_leaders.slice(0, 5).map((r, i) => (
+              <KV key={r.player} k={`${i + 1}. ${r.player}`} v={`${r.count}×`} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

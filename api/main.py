@@ -223,6 +223,85 @@ def team_profile(name: str = Query(...)):
             "meta": team_entry(key)}
 
 
+@app.get("/api/teams/detail")
+def team_detail(name: str = Query(...)):
+    """Season trend + h2h grid vs every opponent + POTM leaders for one team."""
+    from src.clean import normalize_team
+    df = matches()
+    t = normalize_team(name)
+    teams = sorted(pd.concat([df["team1"], df["team2"]]).unique().tolist())
+    if t not in teams:
+        raise HTTPException(404, f"unknown team: {name}")
+    m = df[df["decided"] & ((df["team1"] == t) | (df["team2"] == t))].copy()
+    trend = []
+    for season, g in m.groupby("season_year"):
+        w = int((g["winner"] == t).sum())
+        trend.append({"season": int(season), "played": len(g), "wins": w,
+                      "win_pct": round(w / len(g), 3)})
+    grid = []
+    for opp in teams:
+        if opp == t:
+            continue
+        g = m[(m["team1"] == opp) | (m["team2"] == opp)]
+        if not len(g):
+            continue
+        w = int((g["winner"] == t).sum())
+        grid.append({"opponent": opp,
+                     **{k: v for k, v in team_entry(opp).items() if k != "name"},
+                     "played": len(g), "wins": w,
+                     "win_pct": round(w / len(g), 3)})
+    grid.sort(key=lambda r: -r["played"])
+    potm = (m["player_of_match"].value_counts().head(8).reset_index())
+    potm.columns = ["player", "count"]
+    return {"team": t, "trend": trend, "h2h_grid": grid,
+            "potm_leaders": potm.to_dict(orient="records")}
+
+
+_deliveries = None
+
+
+def deliveries():
+    global _deliveries
+    if _deliveries is None:
+        from src.live import load_deliveries
+        _deliveries = load_deliveries()
+    return _deliveries
+
+
+@app.get("/api/players/detail")
+def player_detail(name: str = Query(...)):
+    """Profile for one player: matches, POTM, teams, per-season series, form."""
+    from src.live import BOWL_KINDS
+    d = deliveries()
+    df = matches()
+    bat = d[d["batter"] == name]
+    bowl = d[d["bowler"] == name]
+    if not len(bat) and not len(bowl):
+        raise HTTPException(404, f"unknown player: {name}")
+    season = df.set_index("id")["season_year"].to_dict()
+    potm = int((df["player_of_match"] == name).sum())
+    teams = sorted(set(bat["batting_team"]) | set(bowl["bowling_team"]))
+    mine = d[(d["batter"] == name) | (d["bowler"] == name)].copy()
+    mine["season"] = mine["match_id"].map(season)
+    series = []
+    for s, g in mine.groupby("season"):
+        runs = int(g[g["batter"] == name]["batsman_runs"].sum())
+        wkts = int(g[(g["bowler"] == name)
+                     & g["dismissal_kind"].isin(BOWL_KINDS)]["is_wicket"].sum())
+        series.append({"season": int(s), "runs": runs, "wickets": wkts})
+    series.sort(key=lambda r: r["season"])
+    last5 = []
+    for mid, g in list(d[d["batter"] == name].groupby("match_id"))[-5:]:
+        last5.append(int(g["batsman_runs"].sum()))
+    return {"player": name,
+            "matches_batted": int(bat["match_id"].nunique()),
+            "matches_bowled": int(bowl["match_id"].nunique()),
+            "potm": potm, "teams": teams, "series": series,
+            "last5_scores": last5,
+            "career_runs": int(bat["batsman_runs"].sum()),
+            "career_wickets": int(bowl[bowl["dismissal_kind"].isin(BOWL_KINDS)]["is_wicket"].sum())}
+
+
 @app.get("/api/players")
 def players(role: str = Query("batting", pattern="^(batting|bowling)$"),
             era: str = Query("all", pattern="^(all|recent)$"),

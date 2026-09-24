@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="0%" r="90%">
+      <stop offset="0%" stop-color="#0d1526"/>
+      <stop offset="60%" stop-color="#000000"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="160" cy="315" r="96" fill="#0B1830" stroke="rgba(255,255,255,0.2)" stroke-width="3"/>
+  <circle cx="160" cy="315" r="64" fill="#D8FF02"/>
+  <path d="M 136 258 Q 103 315 136 372" fill="none" stroke="#0B1830" stroke-width="9" stroke-dasharray="10 8" stroke-linecap="round"/>
+  <path d="M 184 258 Q 217 315 184 372" fill="none" stroke="#0B1830" stroke-width="9" stroke-dasharray="10 8" stroke-linecap="round"/>
+  <text x="300" y="300" font-family="Inter, Arial, sans-serif" font-size="96" font-weight="600" fill="#ffffff">IPL Pulse</text>
+  <text x="302" y="360" font-family="Inter, Arial, sans-serif" font-size="34" fill="rgba(255,255,255,0.6)">1,243 matches · 295k balls · 2008–2026</text>
+</svg>

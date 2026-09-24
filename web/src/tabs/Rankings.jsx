@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import { api } from "../api";
 import { TeamBadge, pct1 } from "../ui";
 
 export default function Rankings({ meta, season }) {
   const [rows, setRows] = useState([]);
   useEffect(() => {
-    fetch(`/api/rankings${season ? `?season=${season}` : ""}`)
-      .then((r) => r.json()).then((d) => setRows(d.rows)).catch(() => {});
+    api.get(`/api/rankings${season ? `?season=${season}` : ""}`)
+      .then((d) => setRows(d.rows)).catch(() => {});
   }, [season]);
   const max = Math.max(1, ...rows.map((r) => r.wins));
   return (

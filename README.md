@@ -133,7 +133,19 @@ cd web
 npm install
 npm run dev     # http://localhost:5173, /api proxied to FastAPI :8000
 npm run build   # rebuild dist/ after UI changes
+npm test        # 6 Vitest UI tests (jsdom, mocked API)
 ```
+
+## Deploy
+
+- **Backend (FastAPI, required):** Render / Railway / any Python host —
+  `pip install -r requirements.txt && python -m src.train && uvicorn api.main:app`.
+  The API serves `web/dist` itself, so a single service is enough for the full app.
+- **Split deploy (optional):** host `web/dist` on Vercel as a static site and point it at
+  the API with `VITE_API_URL=https://<your-api>` at build time
+  (`VITE_API_URL` is baked in via `web/src/api.js`; same-origin is the default).
+- Link preview: `web/public/og.svg` + meta tags in `web/index.html` are ready for
+  LinkedIn/Twitter cards once a public URL exists.
 
 ## Tests
 

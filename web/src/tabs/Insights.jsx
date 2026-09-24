@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
+import { api } from "../api";
 import { DualBar, pct1 } from "../ui";
 
 export default function Insights() {
   const [toss, setToss] = useState(null);
   const [heat, setHeat] = useState(null);
   useEffect(() => {
-    fetch("/api/insights/toss").then((r) => r.json()).then(setToss).catch(() => {});
-    fetch("/api/analytics/toss-heatmap?top=8").then((r) => r.json()).then(setHeat).catch(() => {});
+    api.get("/api/insights/toss").then(setToss).catch(() => {});
+    api.get("/api/analytics/toss-heatmap?top=8").then(setHeat).catch(() => {});
   }, []);
   if (!toss || !heat) return <p className="micro-label">Loading insights…</p>;
   const bat = toss.find((t) => t.toss_decision === "bat");

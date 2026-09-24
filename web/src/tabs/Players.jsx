@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Field } from "../ui";
+import { api } from "../api";
+import { Field, FormPills, Sparkline } from "../ui";
 
 const darkInput = "field-dark";
 
@@ -9,13 +10,21 @@ export default function Players() {
   const [q, setQ] = useState("");
   const [rows, setRows] = useState(null);
   const [ran, setRan] = useState(false);
+  const [detail, setDetail] = useState(null);
 
   async function run() {
     setRan(true);
-    const r = await fetch(
+    setDetail(null);
+    const r = await api.get(
       `/api/players?role=${role}&era=${era}&q=${encodeURIComponent(q)}&limit=100`
-    ).then((x) => x.json());
+    );
     setRows(r.rows);
+  }
+
+  async function openDetail(name) {
+    const d = await api.get(`/api/players/detail?name=${encodeURIComponent(name)}`);
+    setDetail(d);
+    window.scrollTo({ top: document.body.scrollHeight });
   }
 
   return (
@@ -53,14 +62,50 @@ export default function Players() {
           </h3>
           {rows.length === 0
             ? <p className="micro-label">No data yet — try a different search.</p>
-            : (role === "batting" ? <BatTable rows={rows} era={era} /> : <BowlTable rows={rows} era={era} />)}
+            : (role === "batting" ? <BatTable rows={rows} era={era} open={openDetail} /> : <BowlTable rows={rows} era={era} open={openDetail} />)}
         </div>
       )}
+      {detail && <PlayerDetail key={detail.player} d={detail} close={() => setDetail(null)} />}
     </>
   );
 }
 
-function BatTable({ rows, era }) {
+function PlayerDetail({ d, close }) {
+  const isBat = d.career_runs > 0;
+  const series = d.series.map((s) => (isBat ? s.runs : s.wickets));
+  const labels = d.series.map((s) => s.season);
+  return (
+    <div className="glass mt-4 p-5 sm:p-6 fade-in">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="micro-label">{d.player}</h3>
+        <button onClick={close} aria-label="Close player profile" className="text-white/40 hover:text-white">✕</button>
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <StatBox label="Matches" value={d.matches_batted + d.matches_bowled} />
+        <StatBox label="POTM awards" value={d.potm} />
+        <StatBox label={isBat ? "Career runs" : "Career wkts"} value={isBat ? d.career_runs : d.career_wickets} />
+      </div>
+      <h4 className="micro-label mb-1 mt-4">{isBat ? "Runs by season" : "Wickets by season"}</h4>
+      <Sparkline values={series} labels={labels} color={isBat ? "#D8FF02" : "#88A1FF"} height={72} />
+      <p className="micro-label mt-2 normal-case">Teams: {d.teams.join(" · ")}</p>
+      {d.last5_scores.length > 0 && (
+        <p className="mt-2"><span className="micro-label mr-2">Last 5 innings</span>
+          <FormPills wins={d.last5_scores.map((s) => s >= 30)} /></p>
+      )}
+    </div>
+  );
+}
+
+function StatBox({ label, value }) {
+  return (
+    <div className="rounded-2xl bg-white/5 p-3">
+      <div className="tnum text-xl font-semibold">{value}</div>
+      <div className="micro-label mt-0.5">{label}</div>
+    </div>
+  );
+}
+
+function BatTable({ rows, era, open }) {
   const max = Math.max(1, ...rows.map((r) => r.runs));
   return (
     <div className="overflow-x-auto">
@@ -69,7 +114,7 @@ function BatTable({ rows, era }) {
           {era === "all" && <th>Avg</th>}{era === "all" && <th>50s/100s</th>}{era === "all" && <th>6s</th>}</tr></thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={r.batter}>
+            <tr key={r.batter} onClick={() => open(r.batter)} className="cursor-pointer">
               <td className="tnum">{i + 1}</td>
               <td><b>{r.batter}</b><div className="text-xs text-white/50">{(r.teams || []).slice(-2).join(" · ")}</div></td>
               <td style={{ minWidth: 130 }}>
@@ -89,7 +134,7 @@ function BatTable({ rows, era }) {
   );
 }
 
-function BowlTable({ rows, era }) {
+function BowlTable({ rows, era, open }) {
   const max = Math.max(1, ...rows.map((r) => r.wickets));
   return (
     <div className="overflow-x-auto">
@@ -98,7 +143,7 @@ function BowlTable({ rows, era }) {
           {era === "all" && <th>Avg</th>}{era === "all" && <th>Best</th>}</tr></thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={r.bowler}>
+            <tr key={r.bowler} onClick={() => open(r.bowler)} className="cursor-pointer">
               <td className="tnum">{i + 1}</td>
               <td><b>{r.bowler}</b><div className="text-xs text-white/50">{(r.teams || []).slice(-2).join(" · ")}</div></td>
               <td style={{ minWidth: 130 }}>
