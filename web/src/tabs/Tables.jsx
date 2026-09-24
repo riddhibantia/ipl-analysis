@@ -1,14 +1,13 @@
-import { Logo, pct1 } from "../ui";
+import { TeamBadge, pct1 } from "../ui";
 
 export function rankCls(i) {
   return `tnum inline-flex h-[26px] w-[26px] items-center justify-center rounded-lg text-xs font-semibold ${
-    i < 3 ? "bg-[#D8FF02] text-black" : "bg-white/10 text-white/70"}`;
+    i < 3 ? "bg-[#D8FF02] text-black" : "bg-white/10 text-white/60"}`;
 }
 
 export function ShortPill({ r }) {
   return (
-    <span className="mr-1 inline-block min-w-7 rounded-lg px-1.5 py-0.5 text-center text-xs font-semibold text-black"
-      style={{ background: r.color === "#F9CD05" ? "#D8FF02" : r.color }}>
+    <span className="mr-1 inline-block min-w-7 rounded-lg bg-white/10 px-1.5 py-0.5 text-center text-xs font-semibold text-white">
       {r.short}
     </span>
   );
@@ -57,11 +56,11 @@ export function Ratings({ ratings }) {
             {ratings.map((r, i) => (
               <tr key={r.name}>
                 <td><span className={rankCls(i)}>{i + 1}</span></td>
-                <td><ShortPill r={r} /> {r.name}</td>
+                <td><TeamBadge team={r} size={28} /> <ShortPill r={r} /> {r.name}</td>
                 <td style={{ minWidth: 150 }}>
                   <div className="mb-1 h-2 overflow-hidden rounded-full bg-white/10">
                     <div className="h-full rounded-full bg-gradient-to-r from-[#D8FF02] to-[#88A1FF]"
-                      style={{ width: `${Math.round(((r.elo - min) / (max - min)) * 100)}%` }} />
+                      style={{ width: `${Math.round(((r.elo - min) / Math.max(max - min, 1)) * 100)}%` }} />
                   </div><b className="tnum">{r.elo}</b>
                 </td>
                 <td className="tnum">{pct1(r.win_pct)}</td>

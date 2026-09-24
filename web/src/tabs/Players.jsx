@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Field } from "../ui";
 
-const darkInput = "w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white focus:border-[#D8FF02] focus:outline-none [&>option]:bg-[#0B1830]";
+const darkInput = "field-dark";
 
 export default function Players() {
   const [role, setRole] = useState("batting");
@@ -51,7 +51,9 @@ export default function Players() {
           <h3 className="micro-label mb-3">
             {role === "batting" ? "Batting" : "Bowling"} · {era === "recent" ? "2025–26" : "career"} ({rows.length})
           </h3>
-          {role === "batting" ? <BatTable rows={rows} era={era} /> : <BowlTable rows={rows} era={era} />}
+          {rows.length === 0
+            ? <p className="micro-label">No data yet — try a different search.</p>
+            : (role === "batting" ? <BatTable rows={rows} era={era} /> : <BowlTable rows={rows} era={era} />)}
         </div>
       )}
     </>

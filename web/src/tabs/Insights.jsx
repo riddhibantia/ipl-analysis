@@ -12,18 +12,17 @@ export default function Insights() {
   const bat = toss.find((t) => t.toss_decision === "bat");
   const field = toss.find((t) => t.toss_decision === "field");
   const findings = [
-    [`Chasing wins tosses' value`, `Captains who field first take the match ${pct1(field?.toss_winner_won_match)} of the time vs ${pct1(bat?.toss_winner_won_match)} batting first.`],
-    [`Chepauk still bats`, `Chennai is the outlier ground where captains bat first over 60% of the time — spin, slowness, scoreboard pressure.`],
-    [`Wankhede chases`, `At Mumbai only ~25% of toss-winners bat first — dew + short boundaries make chasing dominant.`],
-    [`The toss is worth ~5 points`, `Overall toss-winners win ~52–53% — real, but dwarfed by in-match state (chase model AUC 0.92).`],
+    ["Chasing wins tosses' value", `Captains who field first take the match ${pct1(field?.toss_winner_won_match)} of the time vs ${pct1(bat?.toss_winner_won_match)} batting first.`],
+    ["Chepauk still bats", "Chennai is the outlier ground where captains bat first over 60% of the time — spin, slowness, scoreboard pressure."],
+    ["Wankhede chases", "At Mumbai only ~25% of toss-winners bat first — dew plus short boundaries make chasing dominant."],
+    ["The toss is worth ~5 points", "Overall toss-winners win ~52–53% — real, but dwarfed by in-match state (chase model AUC 0.92)."],
   ];
   return (
     <div>
       <div className="glass p-5 sm:p-6">
         <h3 className="text-lg font-semibold">Toss decision impact</h3>
         <p className="micro-label mb-3 normal-case">Does winning the toss convert to winning the match?</p>
-        <DualBar label="Toss→win conversion" left={field?.toss_winner_won_match} right={bat?.toss_winner_won_match}
-          leftColor="#D8FF02" rightColor="#88A1FF" format={pct1} />
+        <DualBar label="Toss→win conversion" left={field?.toss_winner_won_match} right={bat?.toss_winner_won_match} format={pct1} />
         <div className="micro-label mt-1 flex justify-between"><span>Field first ({field?.n} matches)</span><span>Bat first ({bat?.n} matches)</span></div>
       </div>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -68,7 +67,7 @@ function HeatCell({ c }) {
     <td title={`n=${c.n}`}>
       <span className="tnum inline-block min-w-[86px] rounded-lg px-2 py-1 text-center text-[13px] font-semibold"
         style={{ background: bg, color: fg }}>
-        {c.pct == null ? "–" : `${Math.round(c.pct * 100)}% · ${c.n}`}
+        {c.pct == null ? "No data yet" : `${Math.round(c.pct * 100)}% · ${c.n}`}
       </span>
     </td>
   );

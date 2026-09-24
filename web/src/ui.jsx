@@ -1,27 +1,24 @@
-/* Courtix-system primitives: glass cards, dual bars, count-ups. Dark only. */
-import { useEffect, useState } from "react";
+/* IPL Pulse material primitives. Dark glass only. No ad-hoc team <img> outside TeamBadge. */
+import { useEffect, useRef } from "react";
+import { animate, motion } from "framer-motion";
 
-export function useCountUp(target, ms = 400) {
-  const [v, setV] = useState(0);
-  useEffect(() => {
-    let raf;
-    const t0 = performance.now();
-    const tick = (t) => {
-      const p = Math.min(1, (t - t0) / ms);
-      setV(target * (1 - Math.pow(1 - p, 3)));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, ms]);
-  return v;
+/* Fixed brand-color map (spec). Defunct franchises -> neutral gray. */
+export const BRAND = {
+  CSK: "#FFCB05", MI: "#004BA0", RCB: "#EC1C24", GT: "#1B2133", RR: "#EA1A85",
+  KKR: "#3A225D", SRH: "#FF822A", PBKS: "#DD1F2D", LSG: "#00B4D8", DC: "#17479E",
+};
+const FALLBACK_GRAY = "#5b6472";
+
+/** Resolve a team object to spec brand color (falls back to API color, then gray). */
+export function brandOf(team) {
+  if (!team) return FALLBACK_GRAY;
+  return BRAND[team.short] || team.color || FALLBACK_GRAY;
 }
 
-export function CountUp({ value, format = (x) => Math.round(x).toLocaleString(), ms }) {
-  return <span className="tnum">{format(useCountUp(value, ms))}</span>;
-}
-
-export function Logo({ team, size = 56 }) {
+/** The one TeamBadge(team, size) used everywhere. */
+export function TeamBadge({ team, size = 56 }) {
+  const bg = brandOf(team);
+  const initials = (team.short || "?").slice(0, 3);
   return (
     <span className="relative inline-block shrink-0" style={{ width: size, height: size }}>
       {team.logo ? (
@@ -30,7 +27,8 @@ export function Logo({ team, size = 56 }) {
           alt={team.short}
           width={size}
           height={size}
-          className="rounded-full border border-white/15 bg-white object-contain p-1.5"
+          className="rounded-full object-cover"
+          style={{ width: size, height: size, border: "1px solid rgba(255,255,255,0.25)" }}
           onError={(e) => {
             e.currentTarget.style.display = "none";
             const fb = e.currentTarget.nextElementSibling;
@@ -42,19 +40,54 @@ export function Logo({ team, size = 56 }) {
         className="items-center justify-center rounded-full font-semibold text-white"
         style={{
           display: team.logo ? "none" : "flex",
-          width: size, height: size, background: team.color, fontSize: size / 3.4,
+          width: size, height: size, background: bg, fontSize: size / 3.2,
         }}
       >
-        {team.short}
+        {initials}
       </span>
     </span>
   );
 }
 
+/** Count-up number (~400ms ease-out on mount/value change). */
+export function CountUp({ value, format = (x) => Math.round(x).toLocaleString() }) {
+  const ref = useRef(null);
+  const prev = useRef(0);
+  useEffect(() => {
+    const controls = animate(prev.current, value, {
+      duration: 0.4, ease: "easeOut",
+      onUpdate: (v) => { if (ref.current) ref.current.textContent = format(v); },
+    });
+    prev.current = value;
+    return () => controls.stop();
+  }, [value, format]);
+  return <span ref={ref} className="tnum">{format(0)}</span>;
+}
+
+/** Progress fill (~400ms ease-out). */
+export function FillBar({ pct, color, className = "" }) {
+  return (
+    <div className={`overflow-hidden rounded-full bg-white/10 ${className}`}>
+      <motion.div className="h-full rounded-full" style={{ background: color }}
+        initial={{ width: 0 }} animate={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
+        transition={{ duration: 0.4, ease: "easeOut" }} />
+    </div>
+  );
+}
+
+/** Skeleton shimmer for missing numeric stats. */
+export function Skeleton({ width = 64, height = 20 }) {
+  return <span className="skeleton inline-block" style={{ width, height }} />;
+}
+
+/** Missing progress value -> hide bar, 12px muted text. */
+export function NoData({ text = "No data yet" }) {
+  return <span className="text-[12px] font-medium text-white/60">{text}</span>;
+}
+
 export function CodeChip({ team }) {
   return (
-    <span className="inline-block rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-widest text-black"
-      style={{ background: team.color === "#F9CD05" ? "#D8FF02" : team.color, color: "#000" }}>
+    <span className="inline-block rounded-md bg-white/10 px-2 py-0.5 text-[11px] font-semibold tracking-widest text-white">
       {team.short}
     </span>
   );
@@ -76,8 +109,9 @@ export function SectionHead({ title, sub, right }) {
   );
 }
 
-/** Dual progress bars meeting at center: label left, bar, value right (spec 1.4/2.1). */
-export function DualBar({ label, left, right, leftColor = "#D8FF02", rightColor = "#88A1FF", format = (x) => x }) {
+/** Dual progress bars: lime = left/primary, periwinkle = right/comparison. Never two limes. */
+export function DualBar({ label, left, right, format = (x) => x }) {
+  if (left == null || right == null) return <NoData />;
   const a = Math.max(left, 0.0001);
   const p = Math.round((a / (a + Math.max(right, 0.0001))) * 100);
   return (
@@ -85,17 +119,21 @@ export function DualBar({ label, left, right, leftColor = "#D8FF02", rightColor 
       <div className="mb-1 grid grid-cols-[1fr_auto] items-baseline text-sm">
         <span className="micro-label">{label}</span>
         <span className="tnum text-[13px]">
-          <b style={{ color: leftColor }}>{format(left)}</b>
+          <b className="text-[#D8FF02]">{format(left)}</b>
           <span className="opacity-40"> / </span>
-          <b style={{ color: rightColor }}>{format(right)}</b>
+          <b className="text-[#88A1FF]">{format(right)}</b>
         </span>
       </div>
-      <div className="flex h-2 gap-1 overflow-hidden">
+      <div className="flex h-2 gap-1">
         <div className="flex flex-1 justify-end overflow-hidden rounded-full bg-white/10">
-          <div className="fill-in h-full rounded-full" style={{ width: `${p}%`, background: leftColor }} />
+          <motion.div className="h-full rounded-full bg-[#D8FF02]"
+            initial={{ width: 0 }} animate={{ width: `${p}%` }}
+            transition={{ duration: 0.4, ease: "easeOut" }} />
         </div>
         <div className="flex flex-1 overflow-hidden rounded-full bg-white/10">
-          <div className="fill-in h-full rounded-full" style={{ width: `${100 - p}%`, background: rightColor }} />
+          <motion.div className="h-full rounded-full bg-[#88A1FF]"
+            initial={{ width: 0 }} animate={{ width: `${100 - p}%` }}
+            transition={{ duration: 0.4, ease: "easeOut" }} />
         </div>
       </div>
     </div>
@@ -144,4 +182,4 @@ export function KV({ k, v }) {
   );
 }
 
-export const pct1 = (x) => (x == null ? "–" : `${Math.round(x * 100)}%`);
+export const pct1 = (x) => (x == null ? null : `${Math.round(x * 100)}%`);

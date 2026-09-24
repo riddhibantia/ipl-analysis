@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import { CodeChip, Field, KV, Logo, PrimaryButton } from "../ui";
+import { CodeChip, Field, KV, PrimaryButton, TeamBadge, brandOf } from "../ui";
 
-const darkInput = "w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white focus:border-[#D8FF02] focus:outline-none [&>option]:bg-[#0B1830]";
+const darkInput = "field-dark";
 
 const PRESETS = [
   { name: "Powerplay surge", inn: 1, over: 6, runs: 65, wkts: 1, target: null },
@@ -136,7 +136,8 @@ export default function Live({ meta }) {
 
 function LiveResult({ d }) {
   const p = Math.round(d.prob_batting * 100);
-  const fav = d.favorite === d.batting_team ? d.batting : d.bowling;
+  const favIsBat = d.favorite === d.batting_team;
+  const favColor = favIsBat ? "#D8FF02" : "#88A1FF";
   const chase = d.state.target != null;
   const score = chase
     ? `${d.batting.short} ${d.state.runs}/${d.state.wkts} (${d.state.over}) · need ${d.state.target - d.state.runs} off ${(20 - d.state.over) * 6} balls`
@@ -144,28 +145,28 @@ function LiveResult({ d }) {
   return (
     <div className="fade-in">
       <div className="glass mt-4 overflow-hidden">
-        <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${d.batting.color}, ${d.bowling.color})` }} />
+        <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${brandOf(d.batting)}, ${brandOf(d.bowling)})` }} />
         <div className="p-5 text-center sm:p-6">
           <p className="micro-label mb-3">{chase ? "2nd innings · chase" : "1st innings"} · {d.venue}</p>
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-            <div><CodeChip team={d.batting} /><Logo team={d.batting} size={72} />
+            <div><CodeChip team={d.batting} /><TeamBadge team={d.batting} size={72} />
               <h3 className="mt-2 text-[15px] font-semibold">{d.batting_team}</h3>
               <div className="text-[13px] text-white/50">batting</div></div>
             <div className="mx-auto flex h-[158px] w-[158px] items-center justify-center rounded-full"
-              style={{ background: `conic-gradient(${fav.color} ${p}%, rgba(255,255,255,0.1) ${p}% 100%)` }}>
+              style={{ background: `conic-gradient(${favColor} ${p}%, rgba(255,255,255,0.1) ${p}% 100%)` }}>
               <div className="flex h-[122px] w-[122px] flex-col items-center justify-center rounded-full bg-black">
-                <b className="tnum text-[32px]">{p}%</b>
+                <b className="tnum text-[32px] font-semibold" style={{ color: favColor }}>{p}%</b>
                 <span className="micro-label">win</span>
               </div>
             </div>
-            <div><CodeChip team={d.bowling} /><Logo team={d.bowling} size={72} />
+            <div><CodeChip team={d.bowling} /><TeamBadge team={d.bowling} size={72} />
               <h3 className="mt-2 text-[15px] font-semibold">{d.bowling_team}</h3>
               <div className="text-[13px] text-white/50">bowling</div></div>
           </div>
-          <div className="mt-3 flex items-center gap-3.5 rounded-2xl border border-white/10 bg-white/5 p-3.5 text-left">
+          <div className="mt-3 flex items-center gap-3.5 rounded-[20px] border border-white/10 bg-white/5 p-3.5 text-left">
             <div className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-[#D8FF02] text-lg font-semibold text-black">◷</div>
             <div className="text-[15px]"><b>{score}</b><br />
-              <span className="text-[13px] text-white/50">{d.note} · {fav.short} favourites</span>
+              <span className="text-[13px] text-white/50">{d.note} · {favIsBat ? d.batting.short : d.bowling.short} favourites</span>
             </div>
           </div>
         </div>

@@ -1,35 +1,49 @@
 import { useState } from "react";
 import { api } from "../api";
-import { FormPills, KV, Logo, pct1 } from "../ui";
+import { FormPills, KV, NoData, Skeleton, TeamBadge, brandOf, pct1 } from "../ui";
 
 export default function Teams({ meta, ratings }) {
   const [sel, setSel] = useState(null);
   const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const sorted = [...meta.teams].sort((a, b) => {
+    const ra = ratings.find((x) => x.name === a.name)?.elo || 0;
+    const rb = ratings.find((x) => x.name === b.name)?.elo || 0;
+    return rb - ra;
+  });
   const max = Math.max(...ratings.map((r) => r.elo));
   const min = Math.min(...ratings.map((r) => r.elo));
 
   async function show(name) {
     setSel(name);
-    const [f, p] = await Promise.all([
-      api.form(name),
-      fetch(`/api/teams/profile?name=${encodeURIComponent(name)}`).then((r) => r.json()),
-    ]);
-    setDetail({ name, recent: f.recent, profile: p.profile });
+    setLoading(true);
+    try {
+      const [f, p] = await Promise.all([
+        api.form(name),
+        fetch(`/api/teams/profile?name=${encodeURIComponent(name)}`).then((r) => r.json()),
+      ]);
+      setDetail({ name, recent: f.recent, profile: p.profile });
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <>
       <div className="glass p-5 sm:p-6">
         <h2 className="text-xl font-semibold">Teams</h2>
-        <p className="micro-label mb-3 normal-case">Tap a team for strengths, weaknesses and phase splits.</p>
+        <p className="micro-label mb-3 normal-case">Tap a team for strengths, weaknesses and phase splits. Sorted by Elo.</p>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3">
-          {meta.teams.map((t) => {
+          {sorted.map((t, i) => {
             const r = ratings.find((x) => x.name === t.name) || {};
-            const w = r.elo ? Math.round(((r.elo - min) / (max - min)) * 100) : 0;
+            const w = r.elo ? Math.round(((r.elo - min) / Math.max(max - min, 1)) * 100) : 0;
+            const top3 = i < 3;
             return (
               <button key={t.name} onClick={() => show(t.name)}
-                className={`rounded-2xl border bg-white/5 p-4 text-center transition hover:-translate-y-0.5 hover:border-white/25 ${sel === t.name ? "border-[#D8FF02]" : "border-white/10"}`}>
-                <Logo team={t} size={60} />
+                className={`rounded-[20px] border bg-white/5 text-center transition hover:-translate-y-0.5 hover:border-white/25 ${
+                  top3 ? "border-[#D8FF02]/50 p-5 shadow-[0_0_28px_rgba(216,255,2,0.12)]" : "border-white/10 p-4"
+                } ${sel === t.name ? "!border-[#D8FF02]" : ""}`}>
+                <TeamBadge team={t} size={top3 ? 68 : 60} />
                 <h4 className="mt-2 text-[13px] font-semibold">{t.short}</h4>
                 <div className="tnum text-xs text-white/50">Elo {r.elo || "–"}</div>
                 <div className="my-1.5 h-2 overflow-hidden rounded-full bg-white/10">
@@ -41,6 +55,7 @@ export default function Teams({ meta, ratings }) {
           })}
         </div>
       </div>
+      {loading && !detail && <div className="glass mt-4 p-5"><Skeleton width={220} /></div>}
       {detail && <TeamDetail key={detail.name} detail={detail} />}
     </>
   );
@@ -58,13 +73,13 @@ function TeamDetail({ detail }) {
         <h3 className="micro-label mb-3">{name} — strengths & weaknesses</h3>
         {(p.strengths.length > 0 || p.weaknesses.length > 0) ? (
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="rounded-2xl border border-[#D8FF02]/25 bg-[#D8FF02]/5 p-4">
+            <div className="rounded-[20px] border border-[#D8FF02]/25 bg-[#D8FF02]/5 p-4">
               <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#D8FF02]">Strengths</div>
               {p.strengths.length ? p.strengths.map((s) => (
                 <div key={s} className="mb-1.5 flex gap-2 text-sm"><span className="text-[#D8FF02]">▲</span><span>{s}</span></div>
               )) : <div className="text-sm text-white/50">No outlier traits.</div>}
             </div>
-            <div className="rounded-2xl border border-[#88A1FF]/25 bg-[#88A1FF]/5 p-4">
+            <div className="rounded-[20px] border border-[#88A1FF]/25 bg-[#88A1FF]/5 p-4">
               <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#88A1FF]">Weaknesses</div>
               {p.weaknesses.length ? p.weaknesses.map((s) => (
                 <div key={s} className="mb-1.5 flex gap-2 text-sm"><span className="text-[#88A1FF]">▼</span><span>{s}</span></div>
@@ -74,9 +89,9 @@ function TeamDetail({ detail }) {
         ) : <p className="text-sm text-white/50">Balanced side — no outlier traits vs league average.</p>}
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {splits.map(([l, v]) => (
-            <div key={l} className="rounded-2xl bg-white/5 p-3 text-center">
+            <div key={l} className="rounded-[20px] bg-white/5 p-3 text-center">
               <div className="micro-label">{l}</div>
-              <div className="tnum text-lg font-semibold">{v == null ? "–" : pct1(v)}</div>
+              <div className="tnum text-lg font-semibold">{v == null ? <NoData /> : pct1(v)}</div>
             </div>
           ))}
         </div>
@@ -116,7 +131,7 @@ function PhaseBar({ label, value, max, suffix, bar }) {
     <div className="mb-2">
       <div className="flex justify-between text-[13px]"><span className="text-white/60">{label}</span><b className="tnum">{value}{suffix}</b></div>
       <div className="h-2 overflow-hidden rounded-full bg-white/10">
-        <div className={`fill-in h-full rounded-full ${bar}`} style={{ width: `${pct}%` }} />
+        <div className={`h-full rounded-full ${bar}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -129,8 +144,8 @@ export function rankCls(i) {
 
 export function ShortPill({ r }) {
   return (
-    <span className="mr-1 inline-block min-w-7 rounded-lg px-1.5 py-0.5 text-center text-xs font-semibold text-black"
-      style={{ background: r.color === "#F9CD05" ? "#D8FF02" : r.color }}>
+    <span className="mr-1 inline-block min-w-7 rounded-lg px-1.5 py-0.5 text-center text-xs font-semibold text-white"
+      style={{ background: brandOf({ short: r.short, color: r.color }) }}>
       {r.short}
     </span>
   );

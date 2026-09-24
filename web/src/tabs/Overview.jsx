@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { CountUp, DualBar, FormPills, Logo } from "../ui";
+import heroImg from "../assets/hero.jpg";
+import { CountUp, DualBar, FormPills, TeamBadge } from "../ui";
 
 const fmtK = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}k` : `${n}`);
 
@@ -42,32 +43,39 @@ export default function Overview({ go, meta, season }) {
 
   return (
     <div>
-      {/* ---------- hero ---------- */}
-      <div className="stadium-art relative overflow-hidden rounded-3xl border border-white/10">
+      {/* ---------- hero: real photo + navy scrim inside glass ---------- */}
+      <div className="glass relative overflow-hidden">
+        <img src={heroImg} alt="Night match at Eden Gardens"
+          className="absolute inset-0 h-full w-full object-cover" style={{ opacity: 0.32 }} />
         <div className="hero-scrim absolute inset-0" />
-        <div className="relative p-6 sm:p-10">
+        <div className="relative p-6 pb-14 sm:p-10 sm:pb-16">
           <p className="micro-label !text-white/70">Season pulse · {o.seasons[0]}–{o.seasons[o.seasons.length - 1]}</p>
-          <h2 className="mt-2 max-w-xl text-4xl font-semibold leading-[1.05] sm:text-[62px]">Season Pulse</h2>
-          <p className="mt-2 max-w-lg text-[15px] text-white/60">Monitor season trends and match analytics across every ball.</p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <HeroChip big={<CountUp value={o.matches} />} unit="matches" />
-            <HeroChip big={<CountUp value={o.balls} format={(x) => fmtK(x)} />} unit="balls" />
-            <HeroChip big={<CountUp value={o.orange_cap?.runs || 0} />} unit={`runs · ${shortName(o.orange_cap?.batter)}`} />
-            <HeroChip big={<CountUp value={o.purple_cap?.wickets || 0} />} unit={`wkts · ${shortName(o.purple_cap?.bowler)}`} />
-          </div>
+          <h2 className="page-title mt-2">Season Pulse</h2>
+          <p className="mt-2 max-w-lg text-[16px] text-white/60">Monitor season trends and match analytics across every ball.</p>
+          <p className="micro-label mt-4 !text-[10px] !normal-case !text-white/40">
+            Photo: B0415nil, CC BY-SA 4.0, via Wikimedia Commons
+          </p>
         </div>
+        {/* stat chips overlapping the hero's bottom edge */}
+        <div className="relative flex flex-wrap gap-3 px-6 pb-2 sm:px-10" style={{ transform: "translateY(50%)", marginTop: "-8px" }}>
+          <HeroChip big={<CountUp value={o.matches} />} unit="matches" />
+          <HeroChip big={<CountUp value={o.balls} format={(x) => fmtK(x)} />} unit="balls" />
+          <HeroChip big={<CountUp value={o.orange_cap?.runs || 0} />} unit={`runs · ${shortName(o.orange_cap?.batter)}`} />
+          <HeroChip big={<CountUp value={o.purple_cap?.wickets || 0} />} unit={`wkts · ${shortName(o.purple_cap?.bowler)}`} />
+        </div>
+        <div className="h-8" />
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_340px]">
         {/* ---------- head-to-head panel ---------- */}
-        <div className="glass glass-hover p-5 sm:p-6">
+        <div className="glass p-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-lg font-semibold">Head-to-Head</h3>
             <div className="flex gap-2">
               {[["t1", h2h.t1], ["t2", h2h.t2]].map(([k, v]) => (
                 <select key={k} value={v}
                   onChange={(e) => loadH2h(k === "t1" ? e.target.value : h2h.t1, k === "t2" ? e.target.value : h2h.t2)}
-                  className="max-w-[130px] rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium [&>option]:bg-[#0B1830]">
+                  className="field-dark max-w-[130px] !rounded-full !py-1.5 !text-xs">
                   {teams.map((t) => <option key={t}>{t}</option>)}
                 </select>
               ))}
@@ -79,8 +87,8 @@ export default function Overview({ go, meta, season }) {
           <div className="max-h-[300px] space-y-2 overflow-y-auto pr-1">
             {recent.map((m) => (
               <button key={m.id} onClick={() => go("matches")}
-                className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-left transition hover:border-white/20">
-                <Logo team={m.team1} size={34} />
+                className="glass glass-hover flex w-full items-center gap-3 !rounded-2xl p-3 text-left">
+                <TeamBadge team={m.team1} size={34} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{m.team1.short} vs {m.team2.short}</div>
                   <div className="truncate text-xs text-white/50">{m.venue} · {m.date}</div>
@@ -94,17 +102,17 @@ export default function Overview({ go, meta, season }) {
           </div>
         </div>
 
-        {/* ---------- right column: history + heatmap ---------- */}
+        {/* ---------- right column ---------- */}
         <div className="space-y-4">
-          <div className="glass glass-hover p-5">
+          <div className="glass p-5">
             <div className="mb-1 flex items-center justify-between">
               <h3 className="text-lg font-semibold">Season Record</h3>
-              <button onClick={() => go("rankings")} className="text-white/40 hover:text-white">↗</button>
+              <button onClick={() => go("rankings")} className="text-white/40 hover:text-white" title="Expand">↗</button>
             </div>
             <p className="micro-label mb-3">Last result: {recent[0] ? `${recent[0].team1.short} vs ${recent[0].team2.short}` : "–"}</p>
             {rank.slice(0, 2).map((r, i) => (
               <div key={r.team} className="mb-2 flex items-center gap-2">
-                <Logo team={r} size={30} />
+                <TeamBadge team={r} size={30} />
                 <span className="w-10 text-xs font-semibold">{r.short}</span>
                 <div className="flex h-9 flex-1 items-end gap-[3px]">
                   {Array.from({ length: Math.min(r.wins, 14) }).map((_, j) => (
@@ -114,17 +122,14 @@ export default function Overview({ go, meta, season }) {
                     }} />
                   ))}
                 </div>
-                <b className="tnum w-8 text-right text-2xl font-semibold">{String(r.wins).padStart(2, "0")}</b>
+                <b className="tnum w-8 text-right text-[32px] font-semibold">{String(r.wins).padStart(2, "0")}</b>
               </div>
             ))}
             <p className="micro-label mt-1 text-center">Victories · {season} season</p>
           </div>
 
-          <div className="glass glass-hover p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Toss Impact</h3>
-              <button onClick={() => go("insights")} className="text-white/40 hover:text-white">↗</button>
-            </div>
+          <div className="glass p-5">
+            <h3 className="text-lg font-semibold">Toss Impact</h3>
             {heat ? <MiniHeat heat={heat} /> : <p className="micro-label">Loading…</p>}
           </div>
         </div>
@@ -146,8 +151,11 @@ function shortCode(winner, meta) {
 
 function HeroChip({ big, unit }) {
   return (
-    <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 backdrop-blur-xl">
-      <span className="text-3xl font-semibold">{big}</span>
+    <div className="glass !rounded-2xl px-5 py-3">
+      <span className="relative text-[32px] font-semibold leading-none">
+        <span className="absolute -inset-3 -z-0 rounded-full" style={{ background: "radial-gradient(circle, rgba(216,255,2,0.15), transparent 70%)", filter: "blur(40px)" }} />
+        <span className="relative">{big}</span>
+      </span>
       <span className="micro-label ml-2 !normal-case">{unit}</span>
     </div>
   );
@@ -156,15 +164,14 @@ function HeroChip({ big, unit }) {
 function H2H({ d, wins, form1, form2 }) {
   const { team1: a, team2: b } = d;
   const h = d.head_to_head.team1_pct;
-  const w1 = Math.round(h * 100), w2 = 100 - w1;
   return (
     <>
       <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-center">
-        <div><Logo team={a} size={64} /><div className="mt-1 text-sm font-semibold">{a.short}</div>
-          <div className="tnum text-4xl font-semibold" style={{ textShadow: "0 0 30px rgba(216,255,2,.35)" }}>{wins[a.name] ?? "–"}</div></div>
+        <div><TeamBadge team={a} size={64} /><div className="mt-1 text-sm font-semibold">{a.short}</div>
+          <div className="tnum text-4xl font-semibold text-[#D8FF02]" style={{ textShadow: "0 0 30px rgba(216,255,2,.35)" }}>{wins[a.name] ?? "–"}</div></div>
         <div className="micro-label">VS</div>
-        <div><Logo team={b} size={64} /><div className="mt-1 text-sm font-semibold">{b.short}</div>
-          <div className="tnum text-4xl font-semibold" style={{ textShadow: "0 0 30px rgba(136,161,255,.35)" }}>{wins[b.name] ?? "–"}</div></div>
+        <div><TeamBadge team={b} size={64} /><div className="mt-1 text-sm font-semibold">{b.short}</div>
+          <div className="tnum text-4xl font-semibold text-[#88A1FF]" style={{ textShadow: "0 0 30px rgba(136,161,255,.35)" }}>{wins[b.name] ?? "–"}</div></div>
       </div>
       <DualBar label="Win rate" left={h} right={1 - h} format={(x) => `${Math.round(x * 100)}%`} />
       <DualBar label="Elo rating" left={a.elo} right={b.elo} format={(x) => Math.round(x)} />

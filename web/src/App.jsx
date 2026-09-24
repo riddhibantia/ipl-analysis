@@ -1,37 +1,27 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { api } from "./api";
-import Help from "./tabs/Help";
 import Insights from "./tabs/Insights";
-import Live from "./tabs/Live";
-import MatchCentre from "./tabs/MatchCentre";
 import Matches from "./tabs/Matches";
-import Model from "./tabs/Model";
 import Overview from "./tabs/Overview";
 import Players from "./tabs/Players";
 import Rankings from "./tabs/Rankings";
 import Tables, { Ratings } from "./tabs/Tables";
 import Teams from "./tabs/Teams";
-import Toss from "./tabs/Toss";
 
 const Analytics = lazy(() => import("./tabs/Analytics"));
 
 const NAV = [
   ["overview", "Overview", "◈"],
   ["matches", "Matches", "▤"],
-  ["centre", "Match Centre", "◐"],
-  ["live", "Live", "◷"],
   ["teams", "Teams", "⬢"],
   ["players", "Players", "●"],
   ["venues", "Venues", "▦"],
   ["analytics", "Analytics", "✛"],
   ["rankings", "Rankings", "▲"],
   ["insights", "Insights", "✦"],
-  ["toss", "Toss Lab", "◑"],
-  ["model", "Model", "⬣"],
-  ["help", "Help", "?"],
 ];
 
-const MOBILE_TABS = ["overview", "matches", "live", "teams", "players", "analytics"];
+const MOBILE_TABS = ["overview", "matches", "teams", "players", "analytics", "insights"];
 
 export default function App() {
   const [tab, setTab] = useState("overview");
@@ -66,9 +56,9 @@ export default function App() {
   const title = (NAV.find(([id]) => id === tab) || [])[1] || "";
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* ------- desktop sidebar ------- */}
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-[220px] flex-col border-r border-white/10 bg-black px-4 py-6 md:flex">
+    <div className="min-h-screen text-white">
+      {/* ------- desktop sidebar: exactly 8 flat items, no scroll ------- */}
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-[220px] flex-col px-4 py-6 md:flex">
         <div className="mb-8 flex items-center gap-2.5 px-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-semibold text-red-900"
             style={{ background: "radial-gradient(circle at 35% 32%, #ffffff, #ffd9d9 42%, #e02424 78%)" }}>
@@ -79,7 +69,7 @@ export default function App() {
             <div className="micro-label !text-[10px]">analytics</div>
           </div>
         </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto">
+        <nav className="flex-1 space-y-1">
           {NAV.map(([id, label, icon]) => (
             <button key={id} onClick={() => go(id)}
               className={`flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium transition ${
@@ -100,13 +90,13 @@ export default function App() {
 
       {/* ------- main column ------- */}
       <div className="md:pl-[220px]">
-        <header className="sticky top-0 z-10 border-b border-white/10 bg-black/85 backdrop-blur-xl">
+        <header className="sticky top-0 z-10 border-b border-white/10 bg-black/70 backdrop-blur-xl">
           <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-3 px-4 py-4 md:px-8">
             <div className="mr-auto">
-              <h1 className="text-3xl font-semibold tracking-tight md:text-[40px] md:leading-none">{title}</h1>
+              <h1 className="page-title">{title}</h1>
               <p className="micro-label mt-1">
                 {tab === "overview" && "Monitor season trends and match analytics."}
-                {tab === "matches" && "Every ball-verified result, searchable."}
+                {tab === "matches" && "Every verified result, searchable."}
                 {tab === "analytics" && "Dimensionality reduction on match state."}
                 {!["overview", "matches", "analytics"].includes(tab) && "IPL intelligence, live from the data."}
               </p>
@@ -125,7 +115,6 @@ export default function App() {
               <button className="flex h-8 w-8 items-center justify-center rounded-full bg-[#D8FF02] text-sm font-semibold text-black">⌕</button>
             </form>
           </div>
-          {/* mobile nav pills */}
           <nav className="tabs-scroll flex gap-1.5 overflow-x-auto px-4 pb-3 md:hidden">
             {NAV.filter(([id]) => MOBILE_TABS.includes(id)).map(([id, label]) => (
               <button key={id} onClick={() => go(id)}
@@ -144,21 +133,16 @@ export default function App() {
             <div key={tab} className="fade-in">
               {tab === "overview" && <Overview go={go} meta={meta} season={season} />}
               {tab === "matches" && <Matches meta={meta} season={season} query={query} />}
-              {tab === "centre" && <MatchCentre meta={meta} />}
-              {tab === "live" && <Live meta={meta} />}
               {tab === "teams" && <Teams meta={meta} ratings={ratings} />}
               {tab === "players" && <Players />}
               {tab === "venues" && <Tables venues={venues} />}
               {tab === "analytics" && (
                 <Suspense fallback={<p className="micro-label">Loading charts…</p>}>
-                  <Analytics />
+                  <Analytics meta={meta} />
                 </Suspense>
               )}
               {tab === "rankings" && <Rankings meta={meta} season={season} />}
               {tab === "insights" && <Insights />}
-              {tab === "toss" && <Toss meta={meta} />}
-              {tab === "model" && <Model />}
-              {tab === "help" && <Help />}
             </div>
           )}
         </main>

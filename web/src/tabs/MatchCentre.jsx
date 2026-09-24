@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { MONTHS, api } from "../api";
-import { CodeChip, DualBar, Field, FormPills, KV, Logo, PrimaryButton } from "../ui";
+import { CodeChip, DualBar, Field, FormPills, KV, PrimaryButton, TeamBadge, brandOf, pct1 } from "../ui";
 
-const darkInput = "w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white focus:border-[#D8FF02] focus:outline-none [&>option]:bg-[#0B1830]";
+const darkInput = "field-dark";
 
 export default function MatchCentre({ meta }) {
   const teams = meta.teams.map((t) => t.name);
@@ -65,10 +65,9 @@ export default function MatchCentre({ meta }) {
   );
 }
 
-const pct1 = (x) => `${Math.round(x * 100)}%`;
-
 function Result({ d, forms }) {
   const { team1: a, team2: b } = d;
+  const A = { ...a, color: brandOf(a) }, B = { ...b, color: brandOf(b) };
   const h = d.head_to_head.team1_pct;
   const tb = Math.round(d.toss.p_bat_first * 100);
   const batFirst = d.toss.recommendation.startsWith("bat");
@@ -77,13 +76,13 @@ function Result({ d, forms }) {
   return (
     <div className="fade-in">
       <div className="glass mt-4 overflow-hidden">
-        <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${a.color}, ${b.color})` }} />
+        <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${A.color}, ${B.color})` }} />
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 p-5 text-center sm:p-6">
-          <div><CodeChip team={a} /><Logo team={a} size={72} />
+          <div><CodeChip team={A} /><TeamBadge team={A} size={72} />
             <h3 className="mt-2 font-semibold">{a.name}</h3>
             <div className="tnum text-[13px] text-white/50">Elo {a.elo} · {a.played} matches</div></div>
           <div className="mx-auto flex h-[54px] w-[54px] items-center justify-center rounded-full bg-white text-[20px] font-semibold text-black">VS</div>
-          <div><CodeChip team={b} /><Logo team={b} size={72} />
+          <div><CodeChip team={B} /><TeamBadge team={B} size={72} />
             <h3 className="mt-2 font-semibold">{b.name}</h3>
             <div className="tnum text-[13px] text-white/50">Elo {b.elo} · {b.played} matches</div></div>
         </div>
@@ -92,22 +91,22 @@ function Result({ d, forms }) {
 
       <div className="glass mt-4 p-5 sm:p-6">
         <h3 className="mb-3 text-lg font-semibold">Team comparison</h3>
-        <DualBar label="Elo rating" v1={a.elo} v2={b.elo} t1={a} t2={b} fmt={(x) => Math.round(x)} leftColor={a.color} rightColor={b.color} />
-        <DualBar label="All-time win %" v1={a.win_pct} v2={b.win_pct} t1={a} t2={b} fmt={pct1} leftColor={a.color} rightColor={b.color} />
-        <DualBar label="Last-5 form" v1={a.last5} v2={b.last5} t1={a} t2={b} fmt={pct1} leftColor={a.color} rightColor={b.color} />
-        <DualBar label="Head-to-head share" v1={h} v2={1 - h} t1={a} t2={b} fmt={pct1} leftColor={a.color} rightColor={b.color} />
+        <DualBar label="Elo rating" left={a.elo} right={b.elo} format={(x) => Math.round(x)} />
+        <DualBar label="All-time win %" left={a.win_pct} right={b.win_pct} format={pct1} />
+        <DualBar label="Last-5 form" left={a.last5} right={b.last5} format={pct1} />
+        <DualBar label="Head-to-head share" left={h} right={1 - h} format={pct1} />
         <KV k={`${a.short} recent`} v={<FormPills wins={pills(a.name)} />} />
         <KV k={`${b.short} recent`} v={<FormPills wins={pills(b.name)} />} />
       </div>
 
       <div className="glass mt-4 p-5 sm:p-6">
         <h3 className="mb-3 text-lg font-semibold">Toss verdict</h3>
-        <div className="flex items-center gap-3.5 rounded-2xl border border-[#D8FF02]/30 bg-[#D8FF02]/5 p-4">
+        <div className="flex items-center gap-3.5 rounded-[20px] border border-[#D8FF02]/30 bg-[#D8FF02]/5 p-4">
           <div className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-[#D8FF02] text-lg font-semibold text-black">T</div>
           <div className="min-w-0 flex-1">
             <b>Win the toss and {d.toss.recommendation}</b>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-              <div className="fill-in h-full rounded-full bg-[#D8FF02]" style={{ width: `${batFirst ? tb : 100 - tb}%` }} />
+              <div className="h-full rounded-full bg-[#D8FF02]" style={{ width: `${batFirst ? tb : 100 - tb}%` }} />
             </div>
             <span className="micro-label">Model: bat first {tb}% · bowl first {100 - tb}%</span>
           </div>
