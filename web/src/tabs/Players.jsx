@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api";
 import { Field, FormPills, Sparkline } from "../ui";
 
@@ -66,8 +66,96 @@ export default function Players() {
         </div>
       )}
       {detail && <PlayerDetail key={detail.player} d={detail} close={() => setDetail(null)} />}
+      <MatchupLab />
     </>
   );
+}
+
+function MatchupLab() {
+  const [top, setTop] = useState([]);
+  const [batter, setBatter] = useState("V Kohli");
+  const [bowler, setBowler] = useState("JJ Bumrah");
+  const [duel, setDuel] = useState(null);
+  const [err, setErr] = useState(null);
+  useEffect(() => {
+    api.get("/api/matchups/top?min_balls=100&limit=8").then((d) => setTop(d.rows || [])).catch(() => {});
+  }, []);
+
+  async function run() {
+    setErr(null);
+    try {
+      setDuel(await api.get(`/api/matchups/duel?batter=${encodeURIComponent(batter)}&bowler=${encodeURIComponent(bowler)}`));
+    } catch (e) {
+      setErr("No balls found for this duel — check the spelling.");
+      setDuel(null);
+    }
+  }
+
+  return (
+    <div className="glass mt-4 p-5 sm:p-6">
+      <h2 className="text-xl font-semibold">Matchup Lab</h2>
+      <p className="micro-label mb-1 normal-case">Batter vs bowler, ball by ball. Biggest rivalries first.</p>
+      {top.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          {top.map((r) => (
+            <button key={`${r.batter}${r.bowler}`} onClick={() => { setBatter(r.batter); setBowler(r.bowler); }}
+              className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs hover:border-[#D8FF02]">
+              {shortNm(r.batter)} vs {shortNm(r.bowler)} <span className="tnum text-white/50">· {r.balls} balls</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+        <Field label="Batter">
+          <input className="field-dark" value={batter} onChange={(e) => setBatter(e.target.value)} />
+        </Field>
+        <Field label="Bowler">
+          <input className="field-dark" value={bowler} onChange={(e) => setBowler(e.target.value)} />
+        </Field>
+        <button onClick={run} className="rounded-full bg-[#D8FF02] px-6 py-2.5 text-sm font-semibold text-black">
+          Face off
+        </button>
+      </div>
+      {err && <p className="micro-label mt-2">{err}</p>}
+      {duel && (
+        <div className="mt-3 rounded-[20px] border border-white/10 bg-white/5 p-4 fade-in">
+          <div className="grid grid-cols-4 gap-2 text-center">
+            <MiniStat label="Balls" value={duel.balls} />
+            <MiniStat label="Runs" value={duel.runs} />
+            <MiniStat label="Dismissals" value={duel.outs} />
+            <MiniStat label="SR" value={duel.balls ? (100 * duel.runs / duel.balls).toFixed(1) : "–"} />
+          </div>
+          <div className="mt-3">
+            <p className="micro-label mb-1">Runs by season</p>
+            <Sparkline values={duel.by_season.map((s) => s.runs)}
+              labels={duel.by_season.map((s) => s.season)} color="#D8FF02" />
+          </div>
+          <div className="mt-2 space-y-1">
+            {duel.meetings.slice(0, 4).map((m) => (
+              <div key={m.match_id} className="flex justify-between text-[13px]">
+                <span className="text-white/50">{m.date} · {m.venue?.split(",")[0]}</span>
+                <b className="tnum">{m.runs} off {m.balls}{m.out ? " · out" : ""}</b>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MiniStat({ label, value }) {
+  return (
+    <div className="rounded-2xl bg-black/30 p-2.5">
+      <div className="tnum text-lg font-semibold">{value}</div>
+      <div className="micro-label">{label}</div>
+    </div>
+  );
+}
+
+function shortNm(n) {
+  const p = (n || "").split(" ");
+  return p.length > 1 ? `${p[0][0]} ${p[p.length - 1]}` : n;
 }
 
 function PlayerDetail({ d, close }) {

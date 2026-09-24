@@ -226,6 +226,71 @@ def with_recent_rr(states):
     return states
 
 
+def build_timeline_table(deliveries, matches, m1, m2, cols1=None, cols2=None):
+    """Per-over replay states + win probability for every match.
+
+    Uses pre-match Elo/pools (no leakage) and the trained live models.
+    Saved to model/timelines.json; powers Manhattan/worm/win-prob visuals.
+    """
+    info = {r["id"]: r for _, r in matches.iterrows()}
+    elos = elo_at_match(matches)
+    pools, _, _ = build_pool_table(deliveries, matches)
+    g = deliveries.groupby(["match_id", "inning", "over"]).agg(
+        runs=("total_runs", "sum"), wkts=("is_wicket", "sum")).reset_index()
+    par = (deliveries[deliveries["inning"] == 1].groupby("match_id")["total_runs"]
+           .sum().groupby(matches.set_index("id")["venue"]).mean().to_dict())
+    gpar = float(deliveries[deliveries["inning"] == 1].groupby("match_id")["total_runs"].sum().mean())
+    out = {}
+    for (mid, inn), grp in g.groupby(["match_id", "inning"]):
+        if inn not in (1, 2) or mid not in info:
+            continue
+        m = info[mid]
+        grp = grp.sort_values("over")
+        first = deliveries[(deliveries["match_id"] == mid)
+                           & (deliveries["inning"] == inn)].iloc[0]
+        bat, bowl = first["batting_team"], first["bowling_team"]
+        ven = m["venue"]
+        vpar = par.get(ven, gpar)
+        pb = pools.get(mid, {}).get(bat, {})
+        pw = pools.get(mid, {}).get(bowl, {})
+        cum_runs, cum_wkts = grp["runs"].cumsum(), grp["wkts"].cumsum()
+        last5 = (grp["runs"].rolling(5, min_periods=1).sum().tolist())
+        overs = []
+        for i in range(len(grp)):
+            o = i + 1
+            state = {"inning": inn, "over": o, "runs": int(cum_runs.iloc[i]),
+                     "wkts": int(cum_wkts.iloc[i]),
+                     "elo_bat": elos[mid][bat], "elo_bowl": elos[mid][bowl],
+                     "last5_runs": float(last5[i]),
+                     "target": (m["target_runs"] if pd.notna(m["target_runs"]) else None),
+                     "venue_par": vpar,
+                     "pool_sr": pb.get("sr", 130.0), "pool_avg": pb.get("avg", 25.0),
+                     "pool_econ": pw.get("econ", 8.5), "pool_srate": pw.get("srate", 20.0)}
+            try:
+                cols, model = (INN1, m1) if inn == 1 else (INN2, m2)
+                if inn == 2 and o >= 20:
+                    p = None
+                else:
+                    X = pd.DataFrame([featurize(state, vpar)], columns=cols)
+                    p = round(float(model.predict_proba(X)[0][1]), 3)
+            except Exception:
+                p = None
+            overs.append({"over": o, "runs": state["runs"], "wkts": state["wkts"],
+                          "prob_bat": p})
+        key = str(mid)
+        out.setdefault(key, {"match_id": int(mid), "venue": ven,
+                             "date": str(m["date"].date()),
+                             "team1": m["team1"], "team2": m["team2"],
+                             "winner": (m["winner"] if pd.notna(m["winner"]) else None),
+                             "target": (int(m["target_runs"])
+                                        if pd.notna(m["target_runs"]) else None),
+                             "innings": {}})
+        out[key]["innings"][str(inn)] = {
+            "team": bat, "total": int(cum_runs.iloc[-1]),
+            "wickets": int(cum_wkts.iloc[-1]), "overs": overs}
+    return out
+
+
 def train_one(df, cols):
     cands = {"logreg": LogisticRegression(max_iter=5000),
              "grad_boosting": HistGradientBoostingClassifier(random_state=42)}
@@ -327,6 +392,10 @@ def main():
                          for t, p in current_pools.items()},
            "global_pool": {k: round(float(v), 2) for k, v in global_pool.items()}}
     (MODEL_DIR / "live_aux.json").write_text(json.dumps(aux, indent=2))
+    print("building per-over replay timelines...")
+    timelines = build_timeline_table(d, matches, m1, m2)
+    (MODEL_DIR / "timelines.json").write_text(json.dumps(timelines))
+    print(f"saved {len(timelines)} match timelines")
     print("saved live models + metrics")
 
 

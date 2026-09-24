@@ -119,13 +119,16 @@ def main():
     if (ROOT / "data" / "deliveries.csv").exists():
         from .live import main as live_main
         live_main()
-        from .analytics import build_all
+        from .analytics import build_all, build_matchup_table
         from .live import load_deliveries
         profiles, players = build_all(load_deliveries(), df)
         (MODEL_DIR / "team_profiles.json").write_text(json.dumps(profiles, indent=2))
         (MODEL_DIR / "player_stats.json").write_text(json.dumps(players, indent=2))
         print(f"saved {len(profiles)} team profiles + "
               f"{len(players['batting'])} batters + {len(players['bowling'])} bowlers")
+        matchups = build_matchup_table(load_deliveries())
+        (MODEL_DIR / "matchups.json").write_text(json.dumps(matchups))
+        print(f"saved {len(matchups)} batter-vs-bowler duels")
     else:
         print("skipping live model: data/deliveries.csv not found "
               "(see data/README.md)")

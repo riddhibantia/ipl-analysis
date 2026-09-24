@@ -56,6 +56,8 @@ export default function App() {
   const [feed, setFeed] = useState(null);
   const [motionOff, setMotionOff] = useState(
     () => localStorage.getItem("ipl-reduced-motion") === "1");
+  const [light, setLight] = useState(
+    () => localStorage.getItem("ipl-theme") === "light");
 
   useEffect(() => {
     Promise.all([api.meta(), api.ratings(), api.venues()])
@@ -82,6 +84,11 @@ export default function App() {
     document.documentElement.classList.toggle("reduce-motion", motionOff);
     localStorage.setItem("ipl-reduced-motion", motionOff ? "1" : "0");
   }, [motionOff]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
+    localStorage.setItem("ipl-theme", light ? "light" : "dark");
+  }, [light]);
 
   function togglePanel(p) {
     if (p === "bell" && !feed) {
@@ -147,6 +154,7 @@ export default function App() {
               {panel === "bell" && <FeedPanel feed={feed} />}
               {panel === "settings" && (
                 <SettingsPanel motionOff={motionOff} setMotionOff={setMotionOff}
+                  light={light} setLight={setLight}
                   meta={meta} clearFilters={() => { setQuery(""); setPanel(null); }} />
               )}
               {panel === "profile" && <ProfilePanel meta={meta} />}
@@ -262,16 +270,21 @@ function FeedPanel({ feed }) {
   );
 }
 
-function SettingsPanel({ motionOff, setMotionOff, meta, clearFilters }) {
+function SettingsPanel({ motionOff, setMotionOff, light, setLight, meta, clearFilters }) {
+  const switchCls = (on) => `relative h-5 w-9 rounded-full transition ${on ? "bg-[#D8FF02]" : "bg-white/15"}`;
+  const knobCls = (on) => `absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${on ? "left-[18px]" : "left-0.5"}`;
   return (
     <div>
       <p className="micro-label mb-2">Settings</p>
+      <button onClick={() => setLight(!light)} aria-pressed={light}
+        className="flex w-full items-center justify-between py-2 text-left text-[13px] font-medium">
+        Light theme
+        <span className={switchCls(light)}><span className={knobCls(light)} /></span>
+      </button>
       <button onClick={() => setMotionOff(!motionOff)} aria-pressed={motionOff}
         className="flex w-full items-center justify-between py-2 text-left text-[13px] font-medium">
         Reduce motion
-        <span className={`relative h-5 w-9 rounded-full transition ${motionOff ? "bg-[#D8FF02]" : "bg-white/15"}`}>
-          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${motionOff ? "left-[18px]" : "left-0.5"}`} />
-        </span>
+        <span className={switchCls(motionOff)}><span className={knobCls(motionOff)} /></span>
       </button>
       <button onClick={clearFilters} className="w-full py-2 text-left text-[13px] font-medium text-white/70 hover:text-white">
         Reset search filters

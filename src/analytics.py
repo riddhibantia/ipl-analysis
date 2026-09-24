@@ -205,6 +205,70 @@ def build_all(deliveries, matches):
     return build_team_profiles(deliveries, matches), build_player_stats(deliveries, matches)
 
 
+def build_matchup_table(deliveries, min_balls=30):
+    """Batter-vs-bowler career table. Returns list of dicts sorted by balls."""
+    d = deliveries.copy()
+    d["legal"] = _legal(d)
+    d["dot"] = (d["batsman_runs"] == 0) & (d["extras_type"] != "wides")
+    d["boundary"] = d["batsman_runs"].isin([4, 6])
+    d["out"] = d["player_dismissed"] == d["batter"]
+    g = d.groupby(["batter", "bowler"])
+    rows = []
+    for (batter, bowler), grp in g:
+        balls = int(grp["legal"].sum())
+        if balls < min_balls:
+            continue
+        runs = int(grp["batsman_runs"].sum())
+        outs = int(grp["out"].sum())
+        rows.append({"batter": batter, "bowler": bowler, "balls": balls,
+                     "runs": runs, "outs": outs,
+                     "sr": round(100 * runs / balls, 1) if balls else 0.0,
+                     "avg": round(runs / max(outs, 1), 1),
+                     "dots": int(grp["dot"].sum()),
+                     "boundaries": int(grp["boundary"].sum()),
+                     "teams": sorted(set(grp["batting_team"]) | set(grp["bowling_team"]))})
+    rows.sort(key=lambda r: -r["balls"])
+    return rows
+
+
+def duel_detail(deliveries, matches, batter, bowler):
+    """Per-season + recent-meetings breakdown for one batter-vs-bowler duel."""
+    g = deliveries[(deliveries["batter"] == batter)
+                   & (deliveries["bowler"] == bowler)].copy()
+    if not len(g):
+        return None
+    season = matches.set_index("id")["season_year"].to_dict()
+    meta = matches.set_index("id")[["date", "venue", "team1", "team2",
+                                    "winner"]].to_dict(orient="index")
+    g["season"] = g["match_id"].map(season)
+    g["legal"] = _legal(g)
+    g["out"] = g["player_dismissed"] == g["batter"]
+    by_season = []
+    for s, grp in g.groupby("season"):
+        balls = int(grp["legal"].sum())
+        runs = int(grp["batsman_runs"].sum())
+        outs = int(grp["out"].sum())
+        by_season.append({"season": int(s), "balls": balls, "runs": runs,
+                          "outs": outs,
+                          "sr": round(100 * runs / balls, 1) if balls else 0.0})
+    by_season.sort(key=lambda r: r["season"])
+    meetings = []
+    for mid, grp in list(g.groupby("match_id"))[-8:]:
+        m = meta.get(mid, {})
+        meetings.append({"match_id": int(mid),
+                         "date": str(m.get("date", ""))[:10],
+                         "venue": m.get("venue"),
+                         "runs": int(grp["batsman_runs"].sum()),
+                         "balls": int(grp["legal"].sum()),
+                         "out": bool(grp["out"].any())})
+    meetings.reverse()
+    return {"batter": batter, "bowler": bowler,
+            "balls": int(g["legal"].sum()),
+            "runs": int(g["batsman_runs"].sum()),
+            "outs": int(g["out"].sum()),
+            "by_season": by_season, "meetings": meetings}
+
+
 def build_pca(matches, max_points=1500):
     """Honest EDA dimensionality reduction.
 

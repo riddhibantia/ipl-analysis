@@ -13,9 +13,12 @@ export default function MatchCentre({ meta }) {
   const [data, setData] = useState(null);
   const [forms, setForms] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   async function run() {
     setLoading(true);
+    setPreview(null);
     try {
       const d = await api.matchCentre({ team1: t1, team2: t2, venue, month });
       setData(d);
@@ -60,12 +63,24 @@ export default function MatchCentre({ meta }) {
         <PrimaryButton onClick={run}>Analyze matchup</PrimaryButton>
       </div>
       {loading && <div className="glass mt-4 p-5"><p className="micro-label">Loading preview…</p></div>}
-      {data && !loading && <Result d={data} forms={forms} />}
+      {data && !loading && <Result d={data} forms={forms} venue={venue}
+        preview={preview} previewLoading={previewLoading}
+        onPreview={async () => {
+          setPreviewLoading(true);
+          try {
+            setPreview(await api.get(
+              `/api/preview?team1=${encodeURIComponent(t1)}&team2=${encodeURIComponent(t2)}&venue=${encodeURIComponent(venue)}`));
+          } catch {
+            setPreview({ text: "Preview unavailable right now.", source: "template" });
+          } finally {
+            setPreviewLoading(false);
+          }
+        }} />}
     </>
   );
 }
 
-function Result({ d, forms }) {
+function Result({ d, forms, preview, previewLoading, onPreview }) {
   const { team1: a, team2: b } = d;
   const A = { ...a, color: brandOf(a) }, B = { ...b, color: brandOf(b) };
   const h = d.head_to_head.team1_pct;
@@ -116,6 +131,21 @@ function Result({ d, forms }) {
           <KV k="Captains bat first" v={pct1(vh.bat_first_pct)} />
           <KV k="Toss winners take the match" v={pct1(vh.toss_win_match_win_pct)} />
         </div>)}
+      </div>
+
+      <div className="glass mt-4 p-5 sm:p-6">
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-lg font-semibold">AI Preview</h3>
+          <span className="micro-label">{preview ? (preview.source === "ai" ? "generated" : "stats template") : ""}</span>
+        </div>
+        {!preview && !previewLoading && (
+          <button onClick={onPreview}
+            className="w-full rounded-full border border-[#D8FF02]/50 bg-[#D8FF02]/10 p-3 text-sm font-semibold text-[#D8FF02] hover:bg-[#D8FF02]/20">
+            Generate preview
+          </button>
+        )}
+        {previewLoading && <p className="micro-label">Writing preview…</p>}
+        {preview && <p className="text-[15px] leading-relaxed text-white/85 fade-in">{preview.text}</p>}
       </div>
     </div>
   );

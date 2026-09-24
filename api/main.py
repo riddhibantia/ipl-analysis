@@ -317,6 +317,51 @@ def players(role: str = Query("batting", pattern="^(batting|bowling)$"),
     return {"role": role, "era": era, "count": len(rows), "rows": rows[:limit]}
 
 
+@app.get("/api/matchups/top")
+def matchups_top(min_balls: int = Query(60, ge=12),
+                 limit: int = Query(30, le=100)):
+    try:
+        table = json.loads((ROOT / "model" / "matchups.json").read_text())
+    except FileNotFoundError:
+        raise HTTPException(503, "matchup table not trained (run python -m src.train)")
+    rows = [r for r in table if r["balls"] >= min_balls][:limit]
+    return {"count": len(rows), "rows": rows}
+
+
+@app.get("/api/matchups/duel")
+def matchup_duel(batter: str = Query(...), bowler: str = Query(...)):
+    from src.analytics import duel_detail
+    d = duel_detail(deliveries(), matches(), batter, bowler)
+    if d is None:
+        raise HTTPException(404, "no balls found for this duel")
+    return d
+
+
+@app.get("/api/matches/{match_id}/timeline")
+def match_timeline(match_id: int):
+    try:
+        timelines = json.loads((ROOT / "model" / "timelines.json").read_text())
+    except FileNotFoundError:
+        raise HTTPException(503, "timelines not trained (run python -m src.train)")
+    t = timelines.get(str(match_id))
+    if t is None:
+        raise HTTPException(404, f"no timeline for match {match_id}")
+    return t
+
+
+@app.get("/api/preview")
+def preview(team1: str, team2: str, venue: str):
+    from src.clean import normalize_team, normalize_venue
+    from src.predict import get_ratings
+    from src.preview import ai_preview
+    t1, t2 = normalize_team(team1), normalize_team(team2)
+    known = {r["team"] for r in get_ratings()}
+    if t1 not in known or t2 not in known:
+        raise HTTPException(400, "unknown team")
+    return {"team1": t1, "team2": t2,
+            "venue": normalize_venue(venue), **ai_preview(t1, t2, normalize_venue(venue))}
+
+
 @app.get("/api/matches")
 def match_list(season: int | None = None, team: str = Query(""),
                q: str = Query(""), limit: int = Query(30, le=200),

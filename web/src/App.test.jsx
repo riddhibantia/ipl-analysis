@@ -24,6 +24,7 @@ const BASE_ROUTES = [
   ["/api/matches", { total: 0, rows: [] }],
   ["/api/rankings", { rows: [] }],
   ["/api/analytics/toss-heatmap", { rows: [] }],
+  ["/api/matchups/top", { rows: [] }],
 ];
 
 function mockFetch(routes) {
@@ -107,6 +108,22 @@ describe("Sidebar footer", () => {
     expect(screen.getByText("Riddhi Bantia")).toBeInTheDocument();
     const link = screen.getByText("Open GitHub repo");
     expect(link.getAttribute("href")).toContain("github.com/riddhibantia/ipl-analysis");
+  });
+
+  it("toggles light theme and persists", async () => {
+    const { container } = render(<App />);
+    await waitFor(() => expect(screen.getByText("Season Pulse")).toBeInTheDocument());
+    fireEvent.click(sidebarFooter(container).getByLabelText("Settings"));
+    fireEvent.click(screen.getByText("Light theme"));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(localStorage.getItem("ipl-theme")).toBe("light");
+  });
+
+  it("opens a deep-linked live predictor via hash sub", async () => {
+    window.location.hash = "#tab=matches&sub=live";
+    render(<App />);
+    await waitFor(() => expect(screen.getByText("Live Win Predictor")).toBeInTheDocument());
+    expect(screen.getByText("Tense finish")).toBeInTheDocument();
   });
 });
 

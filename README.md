@@ -12,16 +12,20 @@
 1,243 matches and 295,718 balls (2008–2026). Open it and you get:
 
 - **Overview** — season-pulse hero, head-to-head explorer, toss heatmap, season record
-- **Matches** — searchable results explorer (season / team / text)
-- **Match Centre** — Elo ratings, head-to-head, form, venue edge, toss call
-- **Live Predictor** — win probability from any match state (chase AUC 0.92)
-- **Teams** — strengths/weaknesses vs league average, powerplay/middle/death splits
-- **Players** — Orange/Purple-cap leaderboards, strike rates, economies, search
+- **Matches** — searchable results explorer (season / team / text), each row expands into a
+  **replay**: Manhattan, worm and win-probability charts from the real ball data
+- **Match Centre** — Elo ratings, head-to-head, form, venue edge, toss call, **AI preview**
+- **Live Win Predictor** — win probability from any match state (chase AUC 0.92)
+- **Teams** — strengths/weaknesses vs league average, powerplay/middle/death splits,
+  season trend, h2h grid, POTM leaders
+- **Players** — Orange/Purple-cap leaderboards, strike rates, economies, search,
+  player profiles — plus the **Matchup Lab** (batter vs bowler duels, e.g. Kohli vs Bumrah)
 - **Venues · Rankings · Insights · Toss Lab** — grounds, tallies, findings, advice
 - **Analytics** — honest PCA of match state (why pre-toss prediction is hard)
 - **Model** — methodology, metrics, full API reference
 
-Stack: React + Vite + Tailwind + Recharts served by FastAPI; scikit-learn models; official IPL team logos.
+Stack: React + Vite + Tailwind + Recharts + Framer Motion served by FastAPI; scikit-learn models;
+official IPL team logos. Dark glass UI with a light-theme toggle; shareable `#tab=&sub=&season=&q=` links.
 
 ## Architecture
 
@@ -79,6 +83,12 @@ Example intelligence: captains winning the toss at M Chinnaswamy Stadium chase ~
 | `GET /api/teams/profile?name=` | Strengths/weaknesses, phase splits, chase/defend/home/away |
 | `GET /api/players?role=&era=&q=&limit=` | Batting/bowling leaderboards, career or 2025–26 + search |
 | `GET /api/matches?season=&team=&q=&limit=&offset=` | Searchable results explorer |
+| `GET /api/matches/{id}/timeline` | Per-over replay: runs, wickets, win probability |
+| `GET /api/matchups/top?min_balls=&limit=` | Biggest batter-vs-bowler rivalries |
+| `GET /api/matchups/duel?batter=&bowler=` | Duel detail: totals, per-season, meetings |
+| `GET /api/teams/detail?name=` | Season trend, h2h grid, POTM leaders |
+| `GET /api/players/detail?name=` | Profile: matches, POTM, per-season series |
+| `GET /api/preview?team1=&team2=&venue=` | AI match preview (free tier, template fallback) |
 | `GET /api/rankings?season=` | Victory tally, all-time or per season |
 | `GET /api/analytics/pca` | PCA scatter + loadings + correlations |
 | `GET /api/analytics/toss-heatmap?top=` | Venue × decision conversion table |
