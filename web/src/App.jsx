@@ -208,7 +208,7 @@ export default function App() {
 
       {/* ------- main column ------- */}
       <div className="md:pl-[220px]">
-        <header className="sticky top-0 z-10 border-b border-white/10 bg-black/70 backdrop-blur-xl">
+        <header className="topbar sticky top-0 z-10 border-b border-white/10 bg-black/70 backdrop-blur-xl">
           <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-3 px-4 py-4 md:px-8">
             <div className="mr-auto">
               <h1 className="page-title">{title}</h1>

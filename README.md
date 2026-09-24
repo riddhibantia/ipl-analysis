@@ -26,8 +26,8 @@
 - **Model** — methodology, metrics, full API reference
 
 Stack: React + Vite + Tailwind + Recharts + Framer Motion served by FastAPI; scikit-learn models;
-official IPL team logos. Dark glass UI with light-theme toggle, ⌘K command palette,
-shareable `#tab=&sub=&season=&q=` links.
+official IPL team logos. Dark glass UI with a **light-theme toggle**, ⌘K command palette,
+shareable `#tab=&sub=&season=&q=` links. Tests: 29 pytest + 13 Vitest, CI runs both.
 
 ## Architecture
 
@@ -101,6 +101,8 @@ Example intelligence: captains winning the toss at M Chinnaswamy Stadium chase ~
 | `GET /api/ratings`, `GET /api/venues` | Elo table, venue toss/win stats |
 | `GET /api/insights/teams|toss` | SQL-backed aggregates (ex-SQL notebook, now live) |
 | `GET /api/insights/h2h?team1=&team2=`, `GET /api/insights/form?team=` | Head-to-head, last-5 results |
+| `GET /api/seasons/counts` | Matches + balls per season (hero sparklines) |
+| `GET /api/history/this-week` | Notable matches from this calendar week |
 | `GET /api/metrics` | Model metrics JSON |
 
 ## Project structure
@@ -135,7 +137,7 @@ cd web
 npm install
 npm run dev     # http://localhost:5173, /api proxied to FastAPI :8000
 npm run build   # rebuild dist/ after UI changes
-npm test        # 6 Vitest UI tests (jsdom, mocked API)
+npm test        # 13 Vitest UI tests (jsdom, mocked API)
 ```
 
 ## Deploy

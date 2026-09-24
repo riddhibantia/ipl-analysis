@@ -186,6 +186,31 @@ html[data-theme="light"], body[data-theme="light"] {
   background: linear-gradient(135deg, rgba(11, 24, 48, 0.82) 0%, rgba(0, 0, 0, 0.5) 55%, rgba(0, 0, 0, 0.7) 100%);
 }
 
+/* Topbar goes light with the page (mobile bar + sidebar footer stay dark chrome). */
+[data-theme="light"] .topbar {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(14, 30, 51, 0.1);
+}
+
+/* Hero keeps its dark photo treatment in both themes. */
+[data-theme="light"] .keep-dark {
+  background: rgba(10, 18, 36, 0.55);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+[data-theme="light"] .keep-dark .micro-label { color: rgba(255, 255, 255, 0.6); }
+[data-theme="light"] .keep-dark .glass {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+[data-theme="light"] .keep-dark .text-white { color: #fff; }
+[data-theme="light"] .keep-dark h2,
+[data-theme="light"] .keep-dark p { color: inherit; }
+
+/* Periwinkle text is unreadable on white — deepen it (lime text already handled). */
+[data-theme="light"] .text-\[\#88A1FF\] { color: #3b5bdb; }
+
 input[type="range"] { accent-color: #d8ff02; }
 
 .field-dark {

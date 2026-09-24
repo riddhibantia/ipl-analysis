@@ -101,7 +101,7 @@ export default function Overview({ go, meta, season }) {
       </div>
 
       {/* ---------- hero ---------- */}
-      <div className="glass relative overflow-hidden"
+      <div className="glass keep-dark relative overflow-hidden"
         onMouseMove={(e) => {
           const r = e.currentTarget.getBoundingClientRect();
           setGlow({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
